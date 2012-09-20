@@ -32,8 +32,12 @@
 #define LED2_PORT gpioPortE
 #define LED2_PIN 2
 
-void led_setup(void);
+#define BUTTON_PORT gpioPortE
+#define BUTTON_PIN 0
+
+void board_setup(void);
 void led1_on(void);
 void led2_on(void);
 void led1_off(void);
 void led2_off(void);
+bool button_pressed(void);
