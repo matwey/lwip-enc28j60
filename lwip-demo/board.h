@@ -35,6 +35,10 @@
 #define BUTTON_PORT gpioPortE
 #define BUTTON_PIN 0
 
+#define UEXT_USART USART1
+#define UEXT_USART_CLOCK cmuClock_USART1
+#define UEXT_USART_LOCATION 1
+
 void board_setup(void);
 void led1_on(void);
 void led2_on(void);
