@@ -16,7 +16,7 @@ static uint8_t enc_command(uint8_t first, uint8_t second)
 	return result;
 }
 
-uint8_t enc_RCR(uint8_t reg) { return enc_command(reg & 0x1f, 0); }
+uint8_t enc_RCR(enc_register_t reg) { return enc_command(reg & 0x1f, 0); }
 void enc_WCR(uint8_t reg, uint8_t data) { enc_command(0x40 | (reg & 0x1f), data); }
 void enc_BFS(uint8_t reg, uint8_t data) { enc_command(0x80 | (reg & 0x1f), data); }
 void enc_BFC(uint8_t reg, uint8_t data) { enc_command(0xa0 | (reg & 0x1f), data); }
@@ -27,7 +27,7 @@ void enc_select_page(uint8_t page) { enc_WCR(ENC_ECON1, page & 0x03); }
 
 void enc_wait(void) { while (!(enc_RCR(ENC_ESTAT) & ENC_ESTAT_CLKRDY));}
 
-uint16_t enc_MII_read(uint8_t mireg)
+uint16_t enc_MII_read(enc_register_t mireg)
 {
 	uint16_t result = 0;
 
