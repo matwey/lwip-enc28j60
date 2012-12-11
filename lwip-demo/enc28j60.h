@@ -6,7 +6,6 @@ void enc_WCR(uint8_t reg, uint8_t data);
 void enc_BFS(uint8_t reg, uint8_t data);
 void enc_BFC(uint8_t reg, uint8_t data);
 void enc_SC(void);
-void enc_select_page(uint8_t page);
 void enc_wait(void);
 uint16_t enc_MII_read(enc_register_t mireg);
 void enc_MII_write(uint8_t mireg, uint16_t data);

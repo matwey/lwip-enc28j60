@@ -1,11 +1,20 @@
 typedef enum {
+	/* the top 3 bits are used to indicate the bank. lowest bit means
+	 * explicit bank, 110 means "present in all banks", 100 mean "don't
+	 * know". thus, right-shifting by 6 gives bank number. */
 	ENC_BANKMASK = 0xe0,
 
-	ENC_BANKALL = 0x20,
-	ENC_BANK0 = 0x40,
+	ENC_BANKALL = 0xc0,
+	ENC_BANK0 = 0x20,
 	ENC_BANK1 = 0x60,
-	ENC_BANK2 = 0x80,
-	ENC_BANK3 = 0xa0,
+	ENC_BANK2 = 0xa0,
+	ENC_BANK3 = 0xe0,
+	/* initial value used when optimizing away bank changes */
+	ENC_BANK_INDETERMINATE = 0x80,
+
+	ENC_REGISTERMASK = 0x1f,
+
+	/* actual registers start here */
 
 	ENC_EIE = 0x1b | ENC_BANKALL,
 	ENC_EIR = 0x1c | ENC_BANKALL,
