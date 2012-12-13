@@ -1,3 +1,5 @@
+#define ENC_RAMSIZE (8 * 1024)
+
 typedef enum {
 	/* the top 3 bits are used to indicate the bank. lowest bit means
 	 * explicit bank, 110 means "present in all banks", 100 mean "don't
@@ -20,11 +22,23 @@ typedef enum {
 	ENC_EIR = 0x1c | ENC_BANKALL,
 	ENC_ESTAT = 0x1d | ENC_BANKALL,
 #define ENC_ESTAT_CLKRDY 0x01
-	ENC_ECON2 = 0x1f | ENC_BANKALL,
+	ENC_ECON2 = 0x1e | ENC_BANKALL,
+#define ENC_ECON2_AUTOINC (1<<7)
 	ENC_ECON1 = 0x1f | ENC_BANKALL,
+#define ENC_ECON1_TXRTS (1<<3)
 #define ENC_ECON1_CSUMEN (1<<4)
 #define ENC_ECON1_DMAST (1<<5)
+#define ENC_ECON1_RXRST (1<<6)
+#define ENC_ECON1_TXRST (1<<7)
 
+	ENC_ERDPTL = 0x00 | ENC_BANK0,
+	ENC_ERDPTH = 0x01 | ENC_BANK0,
+	ENC_EWRPTL = 0x02 | ENC_BANK0,
+	ENC_EWRPTH = 0x03 | ENC_BANK0,
+	ENC_ETXSTL = 0x04 | ENC_BANK0,
+	ENC_ETXSTH = 0x05 | ENC_BANK0,
+	ENC_ETXNDL = 0x06 | ENC_BANK0,
+	ENC_ETXNDH = 0x07 | ENC_BANK0,
 	ENC_ERXNDL = 0x0a | ENC_BANK0,
 	ENC_ERXNDH = 0x0b | ENC_BANK0,
 	ENC_EDMASTL = 0x10 | ENC_BANK0,
@@ -44,13 +58,18 @@ typedef enum {
 	ENC_MIRDL = 0x18 | ENC_BANK2,
 	ENC_MIRDH = 0x19 | ENC_BANK2,
 
+	ENC_EBSTSD = 0x06 | ENC_BANK3,
 	ENC_EBSTCON = 0x07 | ENC_BANK3,
+#define ENC_EBSTCON_PSEL 0x10
+#define ENC_EBSTCON_PATTERNSHIFTFILL 0x08
 #define ENC_EBSTCON_ADDRESSFILL 0x04
+#define ENC_EBSTCON_RANDOMFILL 0x00
 #define ENC_EBSTCON_TME 2
-#define ENC_EBSTCON_BIST 1
+#define ENC_EBSTCON_BISTST 1
 	ENC_EBSTCSL = 0x08 | ENC_BANK3,
 	ENC_EBSTCSH = 0x09 | ENC_BANK3,
 	ENC_MISTAT = 0x0a | ENC_BANK3,
+	ENC_EREVID = 0x12 | ENC_BANK3,
 #define ENC_MISTAT_BUSY 1
 } enc_register_t;
 
@@ -68,10 +87,17 @@ typedef enum {
 	ENC_PHLCON = 0x14,
 } enc_phreg_t;
 
-#define ENC_LCFG_ON 0x8
-#define ENC_LCFG_OFF 0x9
-#define ENC_LCFG_BLINKFAST 0xa
-#define ENC_LCFG_BLINKSLOW 0xb
+typedef enum {
+	ENC_LCFG_ON = 0x8,
+	ENC_LCFG_OFF = 0x9,
+	ENC_LCFG_BLINKFAST = 0xa,
+	ENC_LCFG_BLINKSLOW = 0xb,
 
-#define ENC_LACFG_OFFSET 8
-#define ENC_LBCFG_OFFSET 4
+	ENC_LCFG_MASK = 0xf,
+} enc_lcfg_t;
+
+typedef enum {
+	/* these are the offsets of ENC_LCFG */
+	ENC_LEDA = 8,
+	ENC_LEDB = 4,
+} enc_led_t;

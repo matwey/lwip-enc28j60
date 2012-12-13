@@ -16,21 +16,80 @@ void enc_setup(void)
 }
 
 /** Run the built-in diagnostics. Returns 0 on success or an unspecified
- * error code. */
+ * error code.
+ *
+ * FIXME: doesn't produce correct results (waits indefinitely on DMA, doesn't
+ * alter pattern, addressfill produces correct checksum but wrong data (0xff
+ * everywhere)
+ * */
 uint8_t enc_bist(void)
 {
 	/* according to 15.1 */
-	enc_WCR(ENC_EDMASTL, 0);
-	enc_WCR(ENC_EDMASTH, 0);
-	enc_WCR(ENC_EDMANDL, 0xff);
-	enc_WCR(ENC_EDMANDH, 0x1f);
-	enc_WCR(ENC_ERXNDL, 0xff);
-	enc_WCR(ENC_ERXNDH, 0x1f);
+	/* 1. */
+	enc_WCR16(ENC_EDMASTL, 0);
+	/* 2. */
+	enc_WCR16(ENC_EDMANDL, 0x1fff);
+	enc_WCR16(ENC_ERXNDL, 0x1fff);
+	/* 3. */
 	enc_BFS(ENC_ECON1, ENC_ECON1_CSUMEN);
-	/* skipping step 4 as we're using address fill mode */
-	enc_WCR(ENC_EBSTCON, ENC_EBSTCON_ADDRESSFILL | ENC_EBSTCON_TME | ENC_EBSTCON_BIST);
+	/* 4. */
+	enc_WCR(ENC_EBSTSD, 0x0c);
+
+	/* 5. */
+	enc_WCR(ENC_EBSTCON, ENC_EBSTCON_PATTERNSHIFTFILL | (1 << 5) | ENC_EBSTCON_TME);
+//	enc_WCR(ENC_EBSTCON, ENC_EBSTCON_ADDRESSFILL | ENC_EBSTCON_PSEL | ENC_EBSTCON_TME);
+	/* 6. */
+	enc_BFS(ENC_EBSTCON, ENC_EBSTCON_BISTST);
+	/* wait a second -- never took any time yet */
+	while(enc_RCR(ENC_EBSTCON) & ENC_EBSTCON_BISTST)
+		log_message("(%02x)", enc_RCR(ENC_EBSTCON));
+	/* 7. */
 	enc_BFS(ENC_ECON1, ENC_ECON1_DMAST);
-	while(!enc_RCR(ENC_ECON1 & ENC_ECON1_DMAST));
+	/* 8. */
+	while(enc_RCR(ENC_ECON1) & ENC_ECON1_DMAST)
+		log_message("[%02x]", enc_RCR(ENC_ECON1));
+
+	/* 9.: FIXME pull this in */
+
+	return 0;
+}
+
+/* Similar check to enc_bist, but doesn't rely on the BIST of the chip but
+ * doesn some own reading and writing */
+uint8_t enc_bist_manual(void)
+{
+	uint16_t address;
+	uint8_t buffer[256];
+
+	enc_WCR16(ENC_ERXNDL, 0x1fff);
+
+	for (address = 0; address < ENC_RAMSIZE; address += 256)
+	{
+		for (int i = 0; i < 256; ++i)
+			buffer[i] = ((address >> 8) + i) % 256;
+
+		enc_WBM(buffer, address, 256);
+	}
+
+	for (address = 0; address < ENC_RAMSIZE; address += 256)
+	{
+		enc_RBM(buffer, address, 256);
+
+		for (int i = 0; i < 256; ++i)
+			if (buffer[i] != ((address >> 8) + i) % 256)
+				return 1;
+	}
+
+	/* dma checksum */
+
+	enc_WCR16(ENC_EDMASTL, 0);
+	enc_WCR16(ENC_EDMANDL, ENC_RAMSIZE-1);
+
+	enc_BFS(ENC_ECON1, ENC_ECON1_CSUMEN | ENC_ECON1_DMAST);
+
+	while (enc_RCR(ENC_ECON1) & ENC_ECON1_DMAST) log_message(".");
+
+	log_message("csum %08x", enc_RCR16(ENC_EDMACSL));
 
 	return 0;
 }
@@ -46,7 +105,7 @@ static uint8_t command(uint8_t first, uint8_t second)
 }
 
 /* this would recurse infinitely if ENC_ECON1 was not ENC_BANKALL */
-static void select_page(uint8_t page) { enc_WCR(ENC_ECON1, page & 0x03); }
+static void select_page(uint8_t page) { enc_WCR(ENC_ECON1, (page & 0x03) | (enc_RCR(ENC_ECON1) & ~0x03)); }
 
 static void ensure_register_accessible(enc_register_t r)
 {
@@ -56,10 +115,37 @@ static void ensure_register_accessible(enc_register_t r)
 	select_page(r >> 6);
 }
 
+/* FIXME: applies only to eth registers, not to mii ones */
 uint8_t enc_RCR(enc_register_t reg) { ensure_register_accessible(reg); return command(reg & 0x1f, 0); }
 void enc_WCR(uint8_t reg, uint8_t data) { ensure_register_accessible(reg); command(0x40 | (reg & 0x1f), data); }
 void enc_BFS(uint8_t reg, uint8_t data) { ensure_register_accessible(reg); command(0x80 | (reg & 0x1f), data); }
 void enc_BFC(uint8_t reg, uint8_t data) { ensure_register_accessible(reg); command(0xa0 | (reg & 0x1f), data); }
+
+void enc_RBM(uint8_t *dest, uint16_t start, uint16_t length)
+{
+	enc_WCR16(ENC_ERDPTL, start);
+	enc_BFS(ENC_ECON2, ENC_ECON2_AUTOINC);
+
+	enchw_select();
+	enchw_exchangebyte(0x3a);
+	while(length--)
+		*(dest++) = enchw_exchangebyte(0);
+	enchw_unselect();
+}
+
+void enc_WBM(uint8_t *src, uint16_t start, uint16_t length)
+{
+	enc_WCR16(ENC_EWRPTL, start);
+	enc_BFS(ENC_ECON2, ENC_ECON2_AUTOINC);
+
+	enchw_select();
+	enchw_exchangebyte(0x7a);
+	while(length--)
+		enchw_exchangebyte(*(src++));
+	enchw_unselect();
+	/* FIXME: this is actually just triggering another pause */
+	enchw_unselect();
+}
 
 /** 16-bit register read. This only applies to ENC28J60 registers whose low
  * byte is at an even offset and whose high byte is one above that. Can be
@@ -67,7 +153,7 @@ void enc_BFC(uint8_t reg, uint8_t data) { ensure_register_accessible(reg); comma
 /* FIXME: could use enc_register16_t */
 uint16_t enc_RCR16(enc_register_t reg) { return (enc_RCR(reg|1) << 8) | enc_RCR(reg&~1);}
 /** 16-bit register read. Compare enc_RCR16. Writes the lower byte first, then
- * the higher. */
+ * the higher, as required for the MII interfaces. */
 void enc_WCR16(uint8_t reg, uint16_t data) { enc_WCR(reg&~1, data & 0xff); enc_WCR(reg|1, data >> 8); }
 
 void enc_SRC(void) { enchw_exchangebyte(0xff); }
@@ -96,4 +182,69 @@ void enc_MII_write(uint8_t mireg, uint16_t data)
 
 	enc_WCR(ENC_MIREGADR, mireg);
 	enc_WCR16(ENC_MIWRL, data);
+}
+
+
+void enc_LED_set(enc_lcfg_t ledconfig, enc_led_t led)
+{
+	uint16_t state;
+	state = enc_MII_read(ENC_PHLCON);
+	state = (state & ~(ENC_LCFG_MASK << led)) | (ledconfig << led);
+	enc_MII_write(ENC_PHLCON, state);
+}
+
+/** Configure the ENC28J60 for network operation, whose initial parameters get
+ * passed as well. */
+void enc_operation_setup(enc_operation_t *op, uint16_t rxbufsize)
+{
+	op->rxbufsize = rxbufsize;
+	/* not setting ring buffer start position: it may never be changed from
+	 * 0 according to errata anyway */
+	enc_WCR16(ENC_ERXNDL, rxbufsize);
+
+	/* enable transmitter and receiver */
+	enc_BFC(ENC_ECON1, ENC_ECON1_TXRST | ENC_ECON1_RXRST);
+}
+
+void enc_transmit(enc_operation_t *op, uint8_t *data, uint16_t length)
+{
+	/* according to section 7.1 */
+	/* FIXME: we only send a single package blockingly, starting at the end of rxbuf */
+	uint16_t start = op->rxbufsize;
+	uint8_t control_byte = 0x03;
+
+
+	/* 1. */
+	enc_WCR16(ENC_ETXSTL, start);
+	/* 2. */
+	enc_WBM(&control_byte, start, 1);
+	enc_WBM(data, start+1, length);
+	/* clear result flags with pattern to see if they were written */
+	for (uint8_t i=0; i < 7; ++i)
+		enc_WBM(&i, start + 1 + length + i, 1);
+
+	/* calculate checksum */
+
+//	enc_WCR16(ENC_EDMASTL, start + 1);
+//	enc_WCR16(ENC_EDMANDL, start + 1 + length - 3);
+//	enc_BFS(ENC_ECON1, ENC_ECON1_CSUMEN | ENC_ECON1_DMAST);
+//	while (enc_RCR(ENC_ECON1) & ENC_ECON1_DMAST);
+//	uint16_t checksum = enc_RCR16(ENC_EDMACSL);
+//	checksum = ((checksum & 0xff) << 8) | (checksum >> 8);
+//	enc_WBM(&checksum, start + 1 + length - 2, 2);
+
+	/* 3. */
+	enc_WCR16(ENC_ETXNDL, start+1+length-1);
+	
+	/* 4. */
+	/* skipped because not using interrupts yet */
+	/* 5. */
+	enc_BFS(ENC_ECON1, ENC_ECON1_TXRTS);
+
+	/* block */
+	while (enc_RCR(ENC_ECON1) & ENC_ECON1_TXRTS);
+
+	uint8_t result[7];
+	enc_RBM(result, start + 1 + length, 7);
+	log_message("transmitted. %02x %02x %02x %02x %02x %02x %02x\n", result[0], result[1], result[2], result[3], result[4], result[5], result[6]);
 }
