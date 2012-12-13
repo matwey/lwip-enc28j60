@@ -82,6 +82,7 @@ uint8_t enc_bist_manual(void)
 
 	/* dma checksum */
 
+	/* we don't use dma at all, so we can just as well not test it.
 	enc_WCR16(ENC_EDMASTL, 0);
 	enc_WCR16(ENC_EDMANDL, ENC_RAMSIZE-1);
 
@@ -90,6 +91,7 @@ uint8_t enc_bist_manual(void)
 	while (enc_RCR(ENC_ECON1) & ENC_ECON1_DMAST) log_message(".");
 
 	log_message("csum %08x", enc_RCR16(ENC_EDMACSL));
+	*/
 
 	return 0;
 }
@@ -204,6 +206,9 @@ void enc_operation_setup(enc_operation_t *op, uint16_t rxbufsize)
 
 	/* enable transmitter and receiver */
 	enc_BFC(ENC_ECON1, ENC_ECON1_TXRST | ENC_ECON1_RXRST);
+
+	/* generate checksums for outgoing frames */
+	enc_BFS(ENC_MACON3, ENC_MACON3_TXCRCEN);
 }
 
 void enc_transmit(enc_operation_t *op, uint8_t *data, uint16_t length)
@@ -211,7 +216,7 @@ void enc_transmit(enc_operation_t *op, uint8_t *data, uint16_t length)
 	/* according to section 7.1 */
 	/* FIXME: we only send a single package blockingly, starting at the end of rxbuf */
 	uint16_t start = op->rxbufsize;
-	uint8_t control_byte = 0x03;
+	uint8_t control_byte = 0; /* no overrides */
 
 
 	/* 1. */
