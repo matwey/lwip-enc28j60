@@ -12,6 +12,9 @@ static enc_register_t last_used_register;
 void enc_setup(void)
 {
 	enchw_setup();
+
+	enc_wait();
+
 	last_used_register = ENC_BANK_INDETERMINATE;
 }
 
@@ -123,16 +126,30 @@ void enc_WCR(uint8_t reg, uint8_t data) { ensure_register_accessible(reg); comma
 void enc_BFS(uint8_t reg, uint8_t data) { ensure_register_accessible(reg); command(0x80 | (reg & 0x1f), data); }
 void enc_BFC(uint8_t reg, uint8_t data) { ensure_register_accessible(reg); command(0xa0 | (reg & 0x1f), data); }
 
-void enc_RBM(uint8_t *dest, uint16_t start, uint16_t length)
+static void RBM_raw(uint8_t *dest, uint16_t length)
 {
-	enc_WCR16(ENC_ERDPTL, start);
-	enc_BFS(ENC_ECON2, ENC_ECON2_AUTOINC);
-
 	enchw_select();
 	enchw_exchangebyte(0x3a);
 	while(length--)
 		*(dest++) = enchw_exchangebyte(0);
 	enchw_unselect();
+}
+
+static void RBM_discard(uint16_t length)
+{
+	enchw_select();
+	enchw_exchangebyte(0x3a);
+	while(length--)
+		enchw_exchangebyte(0);
+	enchw_unselect();
+}
+
+void enc_RBM(uint8_t *dest, uint16_t start, uint16_t length)
+{
+	enc_WCR16(ENC_ERDPTL, start);
+	enc_BFS(ENC_ECON2, ENC_ECON2_AUTOINC);
+
+	RBM_raw(dest, length);
 }
 
 void enc_WBM(uint8_t *src, uint16_t start, uint16_t length)
@@ -155,7 +172,7 @@ void enc_WBM(uint8_t *src, uint16_t start, uint16_t length)
 /* FIXME: could use enc_register16_t */
 uint16_t enc_RCR16(enc_register_t reg) { return (enc_RCR(reg|1) << 8) | enc_RCR(reg&~1);}
 /** 16-bit register read. Compare enc_RCR16. Writes the lower byte first, then
- * the higher, as required for the MII interfaces. */
+ * the higher, as required for the MII interfaces as well as for ERXRDPT. */
 void enc_WCR16(uint8_t reg, uint16_t data) { enc_WCR(reg&~1, data & 0xff); enc_WCR(reg|1, data >> 8); }
 
 void enc_SRC(void) { enchw_exchangebyte(0xff); }
@@ -197,24 +214,60 @@ void enc_LED_set(enc_lcfg_t ledconfig, enc_led_t led)
 
 /** Configure the ENC28J60 for network operation, whose initial parameters get
  * passed as well. */
-void enc_operation_setup(enc_operation_t *op, uint16_t rxbufsize)
+void enc_operation_setup(enc_operation_t *op, uint16_t rxbufsize, uint8_t mac[6])
 {
+	/********* receive buffer setup according to 6.1 ********/
+
 	op->rxbufsize = rxbufsize;
-	/* not setting ring buffer start position: it may never be changed from
-	 * 0 according to errata anyway */
+	enc_WCR16(ENC_ERXSTL, 0); /* see errata, must be 0 */
+	enc_WCR16(ENC_ERXRDPTL, 0);
 	enc_WCR16(ENC_ERXNDL, rxbufsize);
 
-	/* enable transmitter and receiver */
-	enc_BFC(ENC_ECON1, ENC_ECON1_TXRST | ENC_ECON1_RXRST);
+	enc_WCR16(ENC_ERDPTL, 0); /* during regular operation, we'll just read through the ring buffer automatically; setting the read pointer up appropriately*/
 
-	/* generate checksums for outgoing frames */
-	enc_BFS(ENC_MACON3, ENC_MACON3_TXCRCEN);
+	/******** for the moment, the receive filters are good as they are (6.3) ******/
+
+	/******** waiting for ost (6.4) already happened in _setup ******/
+
+	/******** mac initialization acording to 6.5 ************/
+
+	/* enable reception and flow control (shouldn't hurt in simplex either) */
+	enc_BFS(ENC_MACON1, ENC_MACON1_MARXEN | ENC_MACON1_TXPAUS | ENC_MACON1_RXPAUS);
+
+	/* generate checksums for outgoing frames and manage padding automatically */
+	enc_WCR(ENC_MACON3, ENC_MACON3_TXCRCEN | ENC_MACON3_FULLPADDING | ENC_MACON3_FRMLEN);
+
+	/* setting defer is mandatory for 802.3, but it seems the default is reasonable too */
+
+	/* MAMXF has reasonable default */
+
+	/* it's not documented in detail what these do, just how to program them */
+	enc_WCR(ENC_MAIPGL, 0x12);
+	enc_WCR(ENC_MAIPGH, 0x0C);
+
+	/* MACLCON registers have reasonable defaults */
+
+	/* set the mac address */
+	enc_WCR(ENC_MAADR1, mac[0]);
+	enc_WCR(ENC_MAADR2, mac[1]);
+	enc_WCR(ENC_MAADR3, mac[2]);
+	enc_WCR(ENC_MAADR4, mac[3]);
+	enc_WCR(ENC_MAADR5, mac[4]);
+	enc_WCR(ENC_MAADR6, mac[5]);
+
+	/*************** enabling reception as per 7.2 ***********/
+
+	/* enable reception */
+	enc_BFS(ENC_ECON1, ENC_ECON1_RXEN);
+
+	/* pull transmitter and receiver out of reset */
+	enc_BFC(ENC_ECON1, ENC_ECON1_TXRST | ENC_ECON1_RXRST);
 }
 
 void enc_transmit(enc_operation_t *op, uint8_t *data, uint16_t length)
 {
 	/* according to section 7.1 */
-	/* FIXME: we only send a single package blockingly, starting at the end of rxbuf */
+	/* FIXME: we only send a single frame blockingly, starting at the end of rxbuf */
 	uint16_t start = op->rxbufsize;
 	uint8_t control_byte = 0; /* no overrides */
 
@@ -249,7 +302,51 @@ void enc_transmit(enc_operation_t *op, uint8_t *data, uint16_t length)
 	/* block */
 	while (enc_RCR(ENC_ECON1) & ENC_ECON1_TXRTS);
 
+	uint16_t stored_read_position = enc_RCR16(ENC_ERDPTL);
+
 	uint8_t result[7];
 	enc_RBM(result, start + 1 + length, 7);
 	log_message("transmitted. %02x %02x %02x %02x %02x %02x %02x\n", result[0], result[1], result[2], result[3], result[4], result[5], result[6]);
+
+	enc_WCR16(ENC_ERDPTL, stored_read_position);
+
+	/* FIXME: parse that and return reasonable state */
+}
+
+/** Read a received frame into data; may only be called when one is
+ * available. Writes up to maxlength bytes and returns the total length of the
+ * frame. (If the return value is > maxlength, parts of the frame were
+ * discarded.) */
+uint16_t enc_read_received(enc_operation_t *op, uint8_t *data, uint16_t maxlength)
+{
+	uint8_t header[6];
+	uint16_t length;
+
+	/* function documentation says that mustn't be the case anyway, but its
+	 * safer and maybe we'll remove it */
+	if (enc_RCR(ENC_EPKTCNT) == 0)
+		return 0;
+
+	log_message("reading from %04x... ", enc_RCR16(ENC_ERDPTL));
+
+	RBM_raw(header, 6);
+	length = header[2] | (header[3] << 8);
+
+	if (length > maxlength)
+	{
+		RBM_raw(data, maxlength);
+		RBM_discard(length - maxlength);
+	} else {
+		RBM_raw(data, length);
+	}
+
+	uint16_t next_location = header[0] + (header[1] << 8);
+	enc_WCR16(ENC_ERXRDPTL, next_location);
+	enc_WCR16(ENC_ERDPTL, next_location); /* due to wrapping, we should be there anyway. explicitly setting this because otherwise we'd have to do the two-byte-aligning ourselves, and then we might have to take the wrapping boundaries into consideration, and i tried to avoid that */
+	enc_BFS(ENC_ECON2, ENC_ECON2_PKTDEC);
+
+	log_message("until %04x, ", enc_RCR16(ENC_ERDPTL));
+	log_message("and header is %02x %02x  %02x %02x %02x %02x.\n", header[0], header[1], header[2], header[3], header[4], header[5]);
+
+	return length;
 }

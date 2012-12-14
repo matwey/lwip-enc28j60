@@ -21,5 +21,5 @@ uint16_t enc_MII_read(enc_register_t mireg);
 void enc_MII_write(uint8_t mireg, uint16_t data);
 void enc_LED_set(enc_lcfg_t ledconfig, enc_led_t led);
 
-void enc_operation_setup(enc_operation_t *op, uint16_t rxbufsize);
+void enc_operation_setup(enc_operation_t *op, uint16_t rxbufsize, uint8_t mac[6]);
 void enc_transmit(enc_operation_t *op, uint8_t *data, uint16_t length);
