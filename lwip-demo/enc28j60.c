@@ -63,12 +63,13 @@ uint8_t enc_bist_manual(void)
 {
 	uint16_t address;
 	uint8_t buffer[256];
+	int i;
 
 	enc_WCR16(ENC_ERXNDL, 0x1fff);
 
 	for (address = 0; address < ENC_RAMSIZE; address += 256)
 	{
-		for (int i = 0; i < 256; ++i)
+		for (i = 0; i < 256; ++i)
 			buffer[i] = ((address >> 8) + i) % 256;
 
 		enc_WBM(buffer, address, 256);
@@ -78,7 +79,7 @@ uint8_t enc_bist_manual(void)
 	{
 		enc_RBM(buffer, address, 256);
 
-		for (int i = 0; i < 256; ++i)
+		for (i = 0; i < 256; ++i)
 			if (buffer[i] != ((address >> 8) + i) % 256)
 				return 1;
 	}
@@ -271,15 +272,11 @@ void enc_transmit(enc_operation_t *op, uint8_t *data, uint16_t length)
 	uint16_t start = op->rxbufsize;
 	uint8_t control_byte = 0; /* no overrides */
 
-
 	/* 1. */
 	enc_WCR16(ENC_ETXSTL, start);
 	/* 2. */
 	enc_WBM(&control_byte, start, 1);
 	enc_WBM(data, start+1, length);
-	/* clear result flags with pattern to see if they were written */
-	for (uint8_t i=0; i < 7; ++i)
-		enc_WBM(&i, start + 1 + length + i, 1);
 
 	/* calculate checksum */
 
