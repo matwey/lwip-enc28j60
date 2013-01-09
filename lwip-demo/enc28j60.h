@@ -24,3 +24,9 @@ void enc_LED_set(enc_lcfg_t ledconfig, enc_led_t led);
 void enc_operation_setup(enc_operation_t *op, uint16_t rxbufsize, uint8_t mac[6]);
 void enc_transmit(enc_operation_t *op, uint8_t *data, uint16_t length);
 uint16_t enc_read_received(enc_operation_t *op, uint8_t *data, uint16_t maxlength);
+
+#ifdef ENC28J60_USE_PBUF
+#include <lwip/pbuf.h>
+
+void enc_read_received_pbuf(enc_operation_t *op, struct pbuf **buf);
+#endif

@@ -217,6 +217,13 @@ void enc_LED_set(enc_lcfg_t ledconfig, enc_led_t led)
  * passed as well. */
 void enc_operation_setup(enc_operation_t *op, uint16_t rxbufsize, uint8_t mac[6])
 {
+	/* practical consideration: we don't come out of clean reset, better do
+	 * this -- discard all previous packages */
+
+	enc_BFS(ENC_ECON1, ENC_ECON1_TXRST | ENC_ECON1_RXRST);
+	while(enc_RCR(ENC_EPKTCNT)) enc_BFS(ENC_ECON2, ENC_ECON2_PKTDEC);
+	enc_BFC(ENC_ECON1, ENC_ECON1_TXRST | ENC_ECON1_RXRST); /* FIXME: this should happen later, but when i don't do it here, things won't come up again. probably a problem in the startup sequence. */
+
 	/********* receive buffer setup according to 6.1 ********/
 
 	op->rxbufsize = rxbufsize;
@@ -347,3 +354,41 @@ uint16_t enc_read_received(enc_operation_t *op, uint8_t *data, uint16_t maxlengt
 
 	return length;
 }
+
+#ifdef ENC28J60_USE_PBUF
+/** Like enc_read_received, but allocate a pbuf buf. FIXME: deduplication, error reporting */
+void enc_read_received_pbuf(enc_operation_t *op, struct pbuf **buf)
+{
+	uint8_t header[6];
+	uint16_t length;
+
+	if (*buf != NULL)
+		return 1;
+
+	/* function documentation says that mustn't be the case anyway, but its
+	 * safer and maybe we'll remove it */
+	if (enc_RCR(ENC_EPKTCNT) == 0)
+	{
+		log_message("no packages pending\n");
+		return;
+	}
+
+	RBM_raw(header, 6);
+	length = header[2] | (header[3] << 8);
+
+	*buf = pbuf_alloc(PBUF_RAW, length, PBUF_RAM);
+	if (*buf == NULL)
+	{
+		log_message("failed to allocate buf of length %u.", length);
+		return;
+	}
+	RBM_raw((*buf)->payload, length);
+
+	uint16_t next_location = header[0] + (header[1] << 8);
+	enc_WCR16(ENC_ERXRDPTL, next_location);
+	enc_WCR16(ENC_ERDPTL, next_location); /* due to wrapping, we should be there anyway. explicitly setting this because otherwise we'd have to do the two-byte-aligning ourselves, and then we might have to take the wrapping boundaries into consideration, and i tried to avoid that */
+	enc_BFS(ENC_ECON2, ENC_ECON2_PKTDEC);
+
+	log_message("read with header %02x %02x  %02x %02x %02x %02x to pbuf.\n", header[0], header[1], header[2], header[3], header[4], header[5]);
+}
+#endif
