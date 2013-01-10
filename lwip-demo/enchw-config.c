@@ -1,17 +1,17 @@
-/* SD hardware configuration for the Olimex MOD-ENC28J60 as wired through a
- * straight-through UEXT cable to a UEXT board */
+/* SD hardware configuration for the Olimex MOD-ENC28J60 as wired through the
+ * custom cable to a EFM32STK board */
 
 #include "board.h"
 
-#define SS_PORT UEXT10_PORT
-#define SS_PIN UEXT10_PIN
-#define MOSI_PORT UEXT8_PORT
-#define MOSI_PIN UEXT8_PIN
-#define MISO_PORT UEXT7_PORT
-#define MISO_PIN UEXT7_PIN
-#define SCK_PORT UEXT9_PORT
-#define SCK_PIN UEXT9_PIN
+#define SS_PORT EXT7_PORT
+#define SS_PIN EXT7_PIN
+#define MOSI_PORT EXT4_PORT
+#define MOSI_PIN EXT4_PIN
+#define MISO_PORT EXT6_PORT
+#define MISO_PIN EXT6_PIN
+#define SCK_PORT EXT8_PORT
+#define SCK_PIN EXT8_PIN
 
-#define USART UEXT_USART
-#define USART_CLOCK UEXT_USART_CLOCK
-#define USART_LOCATION UEXT_USART_LOCATION
+#define USART EXT_USART
+#define USART_CLOCK EXT_USART_CLOCK
+#define USART_LOCATION EXT_USART_LOCATION
