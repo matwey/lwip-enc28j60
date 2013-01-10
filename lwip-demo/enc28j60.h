@@ -29,4 +29,5 @@ uint16_t enc_read_received(enc_operation_t *op, uint8_t *data, uint16_t maxlengt
 #include <lwip/pbuf.h>
 
 void enc_read_received_pbuf(enc_operation_t *op, struct pbuf **buf);
+void enc_transmit_pbuf(enc_operation_t *op, struct pbuf *buf);
 #endif

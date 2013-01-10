@@ -153,11 +153,8 @@ void enc_RBM(uint8_t *dest, uint16_t start, uint16_t length)
 	RBM_raw(dest, length);
 }
 
-void enc_WBM(uint8_t *src, uint16_t start, uint16_t length)
+static void WBM_raw(uint8_t *src, uint16_t length)
 {
-	enc_WCR16(ENC_EWRPTL, start);
-	enc_BFS(ENC_ECON2, ENC_ECON2_AUTOINC);
-
 	enchw_select();
 	enchw_exchangebyte(0x7a);
 	while(length--)
@@ -165,6 +162,14 @@ void enc_WBM(uint8_t *src, uint16_t start, uint16_t length)
 	enchw_unselect();
 	/* FIXME: this is actually just triggering another pause */
 	enchw_unselect();
+}
+
+void enc_WBM(uint8_t *src, uint16_t start, uint16_t length)
+{
+	enc_WCR16(ENC_EWRPTL, start);
+	enc_BFS(ENC_ECON2, ENC_ECON2_AUTOINC);
+
+	WBM_raw(src, length);
 }
 
 /** 16-bit register read. This only applies to ENC28J60 registers whose low
@@ -272,19 +277,28 @@ void enc_operation_setup(enc_operation_t *op, uint16_t rxbufsize, uint8_t mac[6]
 	enc_BFC(ENC_ECON1, ENC_ECON1_TXRST | ENC_ECON1_RXRST);
 }
 
-void enc_transmit(enc_operation_t *op, uint8_t *data, uint16_t length)
+/* Partial function of enc_transmit. Always call this as transmit_start /
+ * {transmit_partial * n} / transmit_end -- and use enc_transmit or
+ * enc_transmit_pbuf unless you're just implementing those two */
+void transmit_start(enc_operation_t *op)
 {
 	/* according to section 7.1 */
-	/* FIXME: we only send a single frame blockingly, starting at the end of rxbuf */
-	uint16_t start = op->rxbufsize;
 	uint8_t control_byte = 0; /* no overrides */
 
 	/* 1. */
-	enc_WCR16(ENC_ETXSTL, start);
+	/* FIXME: we only send a single frame blockingly, starting at the end of rxbuf */
+	enc_WCR16(ENC_ETXSTL, op->rxbufsize);
 	/* 2. */
-	enc_WBM(&control_byte, start, 1);
-	enc_WBM(data, start+1, length);
+	enc_WBM(&control_byte, op->rxbufsize, 1);
+}
 
+void transmit_partial(uint8_t *data, uint16_t length)
+{
+	WBM_raw(data, length);
+}
+
+void transmit_end(enc_operation_t *op, uint16_t length)
+{
 	/* calculate checksum */
 
 //	enc_WCR16(ENC_EDMASTL, start + 1);
@@ -296,7 +310,7 @@ void enc_transmit(enc_operation_t *op, uint8_t *data, uint16_t length)
 //	enc_WBM(&checksum, start + 1 + length - 2, 2);
 
 	/* 3. */
-	enc_WCR16(ENC_ETXNDL, start+1+length-1);
+	enc_WCR16(ENC_ETXNDL, op->rxbufsize+1+length-1);
 	
 	/* 4. */
 	/* skipped because not using interrupts yet */
@@ -309,12 +323,20 @@ void enc_transmit(enc_operation_t *op, uint8_t *data, uint16_t length)
 	uint16_t stored_read_position = enc_RCR16(ENC_ERDPTL);
 
 	uint8_t result[7];
-	enc_RBM(result, start + 1 + length, 7);
+	enc_RBM(result, op->rxbufsize + 1 + length, 7);
 	log_message("transmitted. %02x %02x %02x %02x %02x %02x %02x\n", result[0], result[1], result[2], result[3], result[4], result[5], result[6]);
 
 	enc_WCR16(ENC_ERDPTL, stored_read_position);
 
 	/* FIXME: parse that and return reasonable state */
+}
+
+void enc_transmit(enc_operation_t *op, uint8_t *data, uint16_t length)
+{
+	/* FIXME: check buffer size */
+	transmit_start(op);
+	transmit_partial(data, length);
+	transmit_end(op, length);
 }
 
 /** Read a received frame into data; may only be called when one is
@@ -390,5 +412,23 @@ void enc_read_received_pbuf(enc_operation_t *op, struct pbuf **buf)
 	enc_BFS(ENC_ECON2, ENC_ECON2_PKTDEC);
 
 	log_message("read with header %02x %02x  %02x %02x %02x %02x to pbuf.\n", header[0], header[1], header[2], header[3], header[4], header[5]);
+}
+
+/** Like enc_transmit, but read from a pbuf. This is not a trivial wrapper
+ * around enc_transmit as the pbuf is not guaranteed to have a contiguous
+ * memory region to be transmitted. */
+void enc_transmit_pbuf(enc_operation_t *op, struct pbuf *buf)
+{
+	uint16_t length = buf->tot_len;
+
+	/* FIXME: check buffer size */
+	transmit_start(op);
+	while(1) {
+		transmit_partial(buf->payload, buf->len);
+		if (buf->len == buf->tot_len)
+			break;
+		buf = buf->next;
+	}
+	transmit_end(op, length);
 }
 #endif
