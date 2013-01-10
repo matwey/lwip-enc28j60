@@ -28,12 +28,20 @@ static err_t mchdrv_linkoutput(struct netif *netif, struct pbuf *p)
 err_t mchdrv_init(struct netif *netif) {
 	uint8_t mac_addr[6] = {0x02 /* u/l, local */, 0x04, 0xA3, /* microchip's oui as per manual is 00:04:a3 */
 		0x11, 0x22, 0x33};
+	int result;
 
 	log_message("Starting mchdrv_init.\n");
 
 	enc_setup();
-	enc_bist_manual();
+	log_message("Setup finished.\n");
+	result = enc_bist_manual();
+	if (result != 0)
+	{
+		log_message("Error %d in BIST, interface setup aborted.\n", result);
+		return ERR_IF;
+	}
 	enc_operation_setup(&encop, 4*1024, mac_addr);
+	log_message("Operation setup finished.\n");
 
 	netif->state = &encop; /* is this how it's supposed to be used? */
 	netif->output = etharp_output;
@@ -44,5 +52,7 @@ err_t mchdrv_init(struct netif *netif) {
 
 	netif->flags |= NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP;
 
-	return 0;
+	log_message("Driver initialized.\n");
+
+	return ERR_OK;
 }
