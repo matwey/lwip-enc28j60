@@ -10,9 +10,13 @@ void mchdrv_poll(struct netif *netif) {
 	err_t result;
 	struct pbuf *buf = NULL;
 
-	if (enc_RCR(ENC_EPKTCNT)) {
+	uint8_t epktcnt;
+
+	epktcnt = enc_RCR(ENC_EPKTCNT);
+
+	if (epktcnt) {
 		enc_read_received_pbuf(&encop, &buf);
-		log_message("buffer was %u\n", (unsigned int)(buf));
+		log_message("incoming: %d packages, first read into %u\n", epktcnt, (unsigned int)(buf));
 		result = netif->input(buf, netif);
 		log_message("received with result %d\n", result);
 	}
@@ -20,9 +24,10 @@ void mchdrv_poll(struct netif *netif) {
 
 static err_t mchdrv_linkoutput(struct netif *netif, struct pbuf *p)
 {
-	log_message("Sending...");
 	enc_transmit_pbuf(&encop, p);
-	log_message("sent.\n");
+	log_message("sent %d bytes.\n", p->tot_len);
+	/* FIXME: evaluate result state */
+	return ERR_OK;
 }
 
 err_t mchdrv_init(struct netif *netif) {

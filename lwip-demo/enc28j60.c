@@ -353,81 +353,7 @@ void enc_transmit(enc_operation_t *op, uint8_t *data, uint16_t length)
 	transmit_end(op, length);
 }
 
-/** Read a received frame into data; may only be called when one is
- * available. Writes up to maxlength bytes and returns the total length of the
- * frame. (If the return value is > maxlength, parts of the frame were
- * discarded.) */
-uint16_t enc_read_received(enc_operation_t *op, uint8_t *data, uint16_t maxlength)
-{
-	uint8_t header[6];
-	uint16_t length;
-
-	/* function documentation says that mustn't be the case anyway, but its
-	 * safer and maybe we'll remove it */
-	if (enc_RCR(ENC_EPKTCNT) == 0)
-		return 0;
-
-	log_message("reading from %04x... ", enc_RCR16(ENC_ERDPTL));
-
-	RBM_raw(header, 6);
-	length = header[2] | (header[3] << 8);
-
-	if (length > maxlength)
-	{
-		RBM_raw(data, maxlength);
-		RBM_discard(length - maxlength);
-	} else {
-		RBM_raw(data, length);
-	}
-
-	uint16_t next_location = header[0] + (header[1] << 8);
-	enc_WCR16(ENC_ERXRDPTL, next_location);
-	enc_WCR16(ENC_ERDPTL, next_location); /* due to wrapping, we should be there anyway. explicitly setting this because otherwise we'd have to do the two-byte-aligning ourselves, and then we might have to take the wrapping boundaries into consideration, and i tried to avoid that */
-	enc_BFS(ENC_ECON2, ENC_ECON2_PKTDEC);
-
-	log_message("until %04x, ", enc_RCR16(ENC_ERDPTL));
-	log_message("and header is %02x %02x  %02x %02x %02x %02x.\n", header[0], header[1], header[2], header[3], header[4], header[5]);
-
-	return length;
-}
-
 #ifdef ENC28J60_USE_PBUF
-/** Like enc_read_received, but allocate a pbuf buf. FIXME: deduplication, error reporting */
-void enc_read_received_pbuf(enc_operation_t *op, struct pbuf **buf)
-{
-	uint8_t header[6];
-	uint16_t length;
-
-	if (*buf != NULL)
-		return 1;
-
-	/* function documentation says that mustn't be the case anyway, but its
-	 * safer and maybe we'll remove it */
-	if (enc_RCR(ENC_EPKTCNT) == 0)
-	{
-		log_message("no packages pending\n");
-		return;
-	}
-
-	RBM_raw(header, 6);
-	length = header[2] | (header[3] << 8);
-
-	*buf = pbuf_alloc(PBUF_RAW, length, PBUF_RAM);
-	if (*buf == NULL)
-	{
-		log_message("failed to allocate buf of length %u.", length);
-		return;
-	}
-	RBM_raw((*buf)->payload, length);
-
-	uint16_t next_location = header[0] + (header[1] << 8);
-	enc_WCR16(ENC_ERXRDPTL, next_location);
-	enc_WCR16(ENC_ERDPTL, next_location); /* due to wrapping, we should be there anyway. explicitly setting this because otherwise we'd have to do the two-byte-aligning ourselves, and then we might have to take the wrapping boundaries into consideration, and i tried to avoid that */
-	enc_BFS(ENC_ECON2, ENC_ECON2_PKTDEC);
-
-	log_message("read with header %02x %02x  %02x %02x %02x %02x to pbuf.\n", header[0], header[1], header[2], header[3], header[4], header[5]);
-}
-
 /** Like enc_transmit, but read from a pbuf. This is not a trivial wrapper
  * around enc_transmit as the pbuf is not guaranteed to have a contiguous
  * memory region to be transmitted. */
@@ -444,5 +370,75 @@ void enc_transmit_pbuf(enc_operation_t *op, struct pbuf *buf)
 		buf = buf->next;
 	}
 	transmit_end(op, length);
+}
+#endif
+
+void receive_start(enc_operation_t *op, uint8_t header[6], uint16_t *length)
+{
+	RBM_raw(header, 6);
+	*length = header[2] | (header[3] << 8);
+}
+
+void receive_end(enc_operation_t *op, uint8_t header[6])
+{
+	uint16_t next_location = header[0] + (header[1] << 8);
+	enc_WCR16(ENC_ERXRDPTL, next_location);
+	enc_WCR16(ENC_ERDPTL, next_location); /* due to wrapping, we should be there anyway. explicitly setting this because otherwise we'd have to do the two-byte-aligning ourselves, and then we might have to take the wrapping boundaries into consideration, and i tried to avoid that */
+	log_message("before %d, ", enc_RCR(ENC_EPKTCNT));
+	enc_BFS(ENC_ECON2, ENC_ECON2_PKTDEC);
+	log_message("after %d.\n", enc_RCR(ENC_EPKTCNT));
+
+	log_message("read with header %02x %02x  %02x %02x %02x %02x.\n", header[0], header[1], header[2], header[3], header[4], header[5]);
+}
+
+/** Read a received frame into data; may only be called when one is
+ * available. Writes up to maxlength bytes and returns the total length of the
+ * frame. (If the return value is > maxlength, parts of the frame were
+ * discarded.) */
+uint16_t enc_read_received(enc_operation_t *op, uint8_t *data, uint16_t maxlength)
+{
+	uint8_t header[6];
+	uint16_t length;
+
+	receive_start(op, header, &length);
+
+	if (length > maxlength)
+	{
+		RBM_raw(data, maxlength);
+		RBM_discard(length - maxlength);
+	} else {
+		RBM_raw(data, length);
+	}
+
+	receive_end(op, header);
+
+	return length;
+}
+
+#ifdef ENC28J60_USE_PBUF
+/** Like enc_read_received, but allocate a pbuf buf. Returns 0 on success, or
+ * unspecified non-zero values on errors. */
+int enc_read_received_pbuf(enc_operation_t *op, struct pbuf **buf)
+{
+	uint8_t header[6];
+	uint16_t length;
+
+	if (*buf != NULL)
+		return 1;
+
+	receive_start(op, header, &length);
+
+	*buf = pbuf_alloc(PBUF_RAW, length, PBUF_RAM);
+	if (*buf == NULL)
+	{
+		log_message("failed to allocate buf of length %u, discarding", length);
+		RBM_discard(length);
+	}
+	else
+		RBM_raw((*buf)->payload, length);
+
+	receive_end(op, header);
+
+	return (*buf == NULL) ? 2 : 0;
 }
 #endif
