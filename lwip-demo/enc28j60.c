@@ -8,14 +8,18 @@
  * explicit changes. */
 static enc_register_t last_used_register;
 
-/** Initialize an ENC28J60 device. */
-void enc_setup(void)
+/** Initialize an ENC28J60 device. Returns 0 on success, or an unspecified
+ * error code if something goes wrong. */
+int enc_setup(void)
 {
 	enchw_setup();
 
-	enc_wait();
+	if (enc_wait())
+		return 1;
 
 	last_used_register = ENC_BANK_INDETERMINATE;
+
+	return 0;
 }
 
 /** Run the built-in diagnostics. Returns 0 on success or an unspecified
@@ -183,7 +187,17 @@ void enc_WCR16(uint8_t reg, uint16_t data) { enc_WCR(reg&~1, data & 0xff); enc_W
 
 void enc_SRC(void) { enchw_exchangebyte(0xff); }
 
-void enc_wait(void) { while (!(enc_RCR(ENC_ESTAT) & ENC_ESTAT_CLKRDY));}
+/** Wait for the ENC28J60 clock to be ready. Returns 0 on success,
+ * and an unspecified non-zero integer on timeout. */
+int enc_wait(void)
+{
+	int i = 0;
+	while (!(enc_RCR(ENC_ESTAT) & ENC_ESTAT_CLKRDY))
+		/* FIXME: as soon as we need a clock somewhere else, make this
+		 * time and not iteration based */
+		if (i++ == 100000) return 1;
+	return 0;
+}
 
 uint16_t enc_MII_read(enc_register_t mireg)
 {

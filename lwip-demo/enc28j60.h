@@ -4,7 +4,7 @@ typedef struct {
 	uint16_t rxbufsize;
 } enc_operation_t;
 
-void enc_setup(void);
+int enc_setup(void);
 uint8_t enc_bist(void);
 uint8_t enc_bist_manual(void);
 uint8_t enc_RCR(enc_register_t reg);
@@ -16,7 +16,7 @@ void enc_BFC(uint8_t reg, uint8_t data);
 void enc_SRC(void);
 void enc_RBM(uint8_t *dest, uint16_t start, uint16_t length);
 void enc_WBM(uint8_t *src, uint16_t start, uint16_t length);
-void enc_wait(void);
+int enc_wait(void);
 uint16_t enc_MII_read(enc_register_t mireg);
 void enc_MII_write(uint8_t mireg, uint16_t data);
 void enc_LED_set(enc_lcfg_t ledconfig, enc_led_t led);

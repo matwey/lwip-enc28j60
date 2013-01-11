@@ -32,16 +32,19 @@ err_t mchdrv_init(struct netif *netif) {
 
 	log_message("Starting mchdrv_init.\n");
 
-	enc_setup();
-	log_message("Setup finished.\n");
+	result = enc_setup();
+	if (result != 0)
+	{
+		log_message("Error %d in enc_setup, interface setup aborted.\n", result);
+		return ERR_IF;
+	}
 	result = enc_bist_manual();
 	if (result != 0)
 	{
-		log_message("Error %d in BIST, interface setup aborted.\n", result);
+		log_message("Error %d in enc_bist_manual, interface setup aborted.\n", result);
 		return ERR_IF;
 	}
 	enc_operation_setup(&encop, 4*1024, mac_addr);
-	log_message("Operation setup finished.\n");
 
 	netif->state = &encop; /* is this how it's supposed to be used? */
 	netif->output = etharp_output;
