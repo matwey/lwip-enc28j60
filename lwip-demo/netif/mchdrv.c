@@ -16,7 +16,7 @@ void mchdrv_poll(struct netif *netif) {
 
 	if (epktcnt) {
 		enc_read_received_pbuf(&encop, &buf);
-		log_message("incoming: %d packages, first read into %u\n", epktcnt, (unsigned int)(buf));
+		log_message("incoming: %d packages, first read into %x\n", epktcnt, (unsigned int)(buf));
 		result = netif->input(buf, netif);
 		log_message("received with result %d\n", result);
 	}
