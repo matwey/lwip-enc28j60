@@ -382,7 +382,17 @@ void receive_start(enc_operation_t *op, uint8_t header[6], uint16_t *length)
 void receive_end(enc_operation_t *op, uint8_t header[6])
 {
 	uint16_t next_location = header[0] + (header[1] << 8);
-	enc_WCR16(ENC_ERXRDPTL, next_location);
+	/* workaround for 80349c.pdf (errata) #14 start.
+	 *
+	 * originally, this would have been
+	 * enc_WCR16(ENC_ERXRDPTL, next_location);
+	 * but thus: */
+	if (next_location == /* enc_RCR16(ENC_ERXSTL) can be simplified because of errata item #5 */ 0)
+		enc_WCR16(ENC_ERXRDPTL, enc_RCR16(ENC_ERXNDL));
+	else
+		enc_WCR16(ENC_ERXRDPTL, next_location - 1);
+	/* workaround end */
+
 	enc_WCR16(ENC_ERDPTL, next_location); /* due to wrapping, we should be there anyway. explicitly setting this because otherwise we'd have to do the two-byte-aligning ourselves, and then we might have to take the wrapping boundaries into consideration, and i tried to avoid that */
 	log_message("before %d, ", enc_RCR(ENC_EPKTCNT));
 	enc_BFS(ENC_ECON2, ENC_ECON2_PKTDEC);
