@@ -1,0 +1,12 @@
+* the enc28j60 code is relatively messy, given that some late restructurings
+  had to be done (functions split to use lwip pbufs instead of pre-allocated
+  buffers etc). the register read/write commands might need additional
+  facilities for mac and mii registers (dummy byte), and the buffer read/write
+  commands could be simplified as to memorize the cursor positions.
+  (especially, that could find the bug causing the next item.)
+* sometimes, packages end up unread in the buffer, while the packet count is
+  still zero. those packages are released by later packages winding up in the
+  same situaton.
+* no extreme amounts of time will be spent on the above unless they become
+  problems for testing, since the enc28j60 might not be the final network
+  hardware used.
