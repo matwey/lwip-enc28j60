@@ -18,10 +18,15 @@ void mchdrv_poll(struct netif *netif) {
 	epktcnt = enc_RCR(&encdevice, ENC_EPKTCNT);
 
 	if (epktcnt) {
-		enc_read_received_pbuf(&encdevice, &buf);
-		log_message("incoming: %d packages, first read into %x\n", epktcnt, (unsigned int)(buf));
-		result = netif->input(buf, netif);
-		log_message("received with result %d\n", result);
+		if (enc_read_received_pbuf(&encdevice, &buf) == 0)
+		{
+			log_message("incoming: %d packages, first read into %x\n", epktcnt, (unsigned int)(buf));
+			result = netif->input(buf, netif);
+			log_message("received with result %d\n", result);
+		} else {
+			/* FIXME: error reporting */
+			log_message("didn't receive.\n");
+		}
 	}
 }
 
