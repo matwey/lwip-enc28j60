@@ -419,7 +419,7 @@ void enc_transmit_pbuf(enc_device_t *dev, struct pbuf *buf)
 void receive_start(enc_device_t *dev, uint8_t header[6], uint16_t *length)
 {
 	enc_RBM(dev, header, dev->next_frame_location, 6);
-	*length = header[2] | (header[3] << 8);
+	*length = header[2] | ((header[3] & 0x7f) << 8);
 }
 
 void receive_end(enc_device_t *dev, uint8_t header[6])
