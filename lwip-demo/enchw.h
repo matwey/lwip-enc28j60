@@ -1,6 +1,9 @@
 #include <stdint.h>
 
-void enchw_setup(void);
-void enchw_select(void);
-void enchw_unselect(void);
-uint8_t enchw_exchangebyte(uint8_t byte);
+typedef struct {
+} enchw_device_t;
+
+void enchw_setup(enchw_device_t *dev);
+void enchw_select(enchw_device_t *dev);
+void enchw_unselect(enchw_device_t *dev);
+uint8_t enchw_exchangebyte(enchw_device_t *dev, uint8_t byte);

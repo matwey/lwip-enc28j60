@@ -1,4 +1,7 @@
-/* ENC28J60 hardware implementation for EMLIB devices */
+/* ENC28J60 hardware implementation for EMLIB devices.
+ *
+ * The enchw_device_t multi-device support is unused so far as it was added to
+ * enc28j60.c later */
 
 #include "enchw.h"
 #include <em_gpio.h>
@@ -17,7 +20,7 @@ static USART_InitSync_TypeDef enc28j60_usart_config = \
     clockMode: usartClockMode0 \
   };
 
-void enchw_setup(void)
+void enchw_setup(enchw_device_t __attribute__((unused)) *dev)
 {
 	CMU_ClockEnable(cmuClock_GPIO, true);
 	CMU_ClockEnable(USART_CLOCK, true);
@@ -39,17 +42,17 @@ void enchw_setup(void)
 }
 
 
-volatile static uint8_t j=0;
+static volatile uint8_t j=0;
 #define pause() while(++j)
 
-void enchw_select(void)
+void enchw_select(enchw_device_t __attribute__((unused)) *dev)
 {
 	/* this migh be relevant for t_{CSD}, especially when sending consecutive commands. */
 	pause();
 	GPIO_PinOutClear(SS_PORT, SS_PIN);
 }
 
-void enchw_unselect(void)
+void enchw_unselect(enchw_device_t __attribute__((unused)) *dev)
 {
 	/* if this pause is not observed, T_{CSH} will not be obeyed and writes
 	 * to MIREGADR will fail */
@@ -57,7 +60,7 @@ void enchw_unselect(void)
 	GPIO_PinOutSet(SS_PORT, SS_PIN);
 }
 
-uint8_t enchw_exchangebyte(uint8_t byte)
+uint8_t enchw_exchangebyte(enchw_device_t __attribute__((unused)) *dev, uint8_t byte)
 {
 	USART_Tx(USART, byte);
 	return USART_Rx(USART);
