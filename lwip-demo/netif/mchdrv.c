@@ -70,8 +70,3 @@ err_t mchdrv_init(struct netif *netif) {
 
 	return ERR_OK;
 }
-
-/** Temporary helper function: Sometimes, the network interface half eats packages. This will test how to reset from that condition. */
-void mchdrv_reset(void) {
-	enc_ethernet_setup(&encdevice, 4*1024, mac_addr);
-}

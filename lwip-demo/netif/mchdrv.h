@@ -6,6 +6,5 @@
 
 err_t mchdrv_init(struct netif *netif);
 void mchdrv_poll(struct netif *netif);
-void mchdrv_reset(void);
 
 #endif
