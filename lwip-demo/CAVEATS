@@ -1,0 +1,4 @@
+* something doesn't get free()d when the device is `nmap -A`d. find out what it
+  is, eliminate this issue, and write a watchdog that checks for availability
+  of free pbuf space. if a threshold is exceeded for an extended period of
+  time, reset.
