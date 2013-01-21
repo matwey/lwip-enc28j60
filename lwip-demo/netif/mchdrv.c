@@ -3,6 +3,9 @@
 #include <netif/etharp.h>
 #include "enc28j60.h"
 
+uint8_t mac_addr[6] = {0x02 /* u/l, local */, 0x04, 0xA3, /* microchip's oui as per manual is 00:04:a3 */
+	0x11, 0x22, 0x33};
+
 enc_operation_t encop;
 
 void mchdrv_poll(struct netif *netif) {
@@ -31,8 +34,6 @@ static err_t mchdrv_linkoutput(struct netif *netif, struct pbuf *p)
 }
 
 err_t mchdrv_init(struct netif *netif) {
-	uint8_t mac_addr[6] = {0x02 /* u/l, local */, 0x04, 0xA3, /* microchip's oui as per manual is 00:04:a3 */
-		0x11, 0x22, 0x33};
 	int result;
 
 	log_message("Starting mchdrv_init.\n");
@@ -63,4 +64,9 @@ err_t mchdrv_init(struct netif *netif) {
 	log_message("Driver initialized.\n");
 
 	return ERR_OK;
+}
+
+/** Temporary helper function: Sometimes, the network interface half eats packages. This will test how to reset from that condition. */
+void mchdrv_reset(void) {
+	enc_operation_setup(&encop, 4*1024, mac_addr);
 }
