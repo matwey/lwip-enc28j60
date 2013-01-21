@@ -182,8 +182,11 @@ void enc_BFC(enc_device_t *dev, uint8_t reg, uint8_t data) {
 	command(dev, 0xa0 | (reg & ENC_REGISTERMASK), data);
 }
 
-static void RBM_raw(enc_device_t *dev, uint8_t *dest, uint16_t length)
+void enc_RBM(enc_device_t *dev, uint8_t *dest, uint16_t start, uint16_t length)
 {
+	if (start != ENC_READLOCATION_ANY)
+		set_erdpt(dev, start);
+
 	enchw_select(HWDEV);
 	enchw_exchangebyte(HWDEV, 0x3a);
 	while(length--)
@@ -192,13 +195,6 @@ static void RBM_raw(enc_device_t *dev, uint8_t *dest, uint16_t length)
 
 	/* returning to 0 as ERXST has to be 0 according to errata */
 	dev->rdpt = (dev->rdpt + length) % (dev->rxbufsize);
-}
-
-void enc_RBM(enc_device_t *dev, uint8_t *dest, uint16_t start, uint16_t length)
-{
-	set_erdpt(dev, start);
-
-	RBM_raw(dev, dest, length);
 }
 
 static void WBM_raw(enc_device_t *dev, uint8_t *src, uint16_t length)
@@ -430,24 +426,23 @@ void receive_start(enc_device_t *dev, uint8_t header[6], uint16_t *length)
 void receive_end(enc_device_t *dev, uint8_t header[6])
 {
 	dev->next_frame_location = header[0] + (header[1] << 8);
-#if 0
+
 	/* workaround for 80349c.pdf (errata) #14 start.
 	 *
 	 * originally, this would have been
-	 * enc_WCR16(ENC_ERXRDPTL, next_location);
+	 * enc_WCR16(dev, ENC_ERXRDPTL, next_location);
 	 * but thus: */
 	if (dev->next_frame_location == /* enc_RCR16(dev, ENC_ERXSTL) can be simplified because of errata item #5 */ 0)
-		dev->next_frame_location = enc_RCR16(dev, ENC_ERXNDL);
+		enc_WCR16(dev, ENC_ERXRDPTL, enc_RCR16(dev, ENC_ERXNDL));
 	else
-		dev->next_frame_location = dev->next_frame_location - 1;
+		enc_WCR16(dev, ENC_ERXRDPTL, dev->next_frame_location - 1);
 	/* workaround end */
-#endif
 
 	log_message("before %d, ", enc_RCR(dev, ENC_EPKTCNT));
 	enc_BFS(dev, ENC_ECON2, ENC_ECON2_PKTDEC);
 	log_message("after %d.\n", enc_RCR(dev, ENC_EPKTCNT));
 
-	log_message("read with header %02x %02x  %02x %02x %02x %02x.\n", header[0], header[1], header[2], header[3], header[4], header[5]);
+	log_message("read with header (%02x %02x) %02x %02x %02x %02x.\n", header[1], /* swapped due to endianness -- i want to read 1234 */ header[0], header[2], header[3], header[4], header[5]);
 }
 
 /** Read a received frame into data; may only be called when one is
@@ -463,10 +458,10 @@ uint16_t enc_read_received(enc_device_t *dev, uint8_t *data, uint16_t maxlength)
 
 	if (length > maxlength)
 	{
-		enc_RBM(dev, data, dev->next_frame_location + 6, maxlength);
+		enc_RBM(dev, data, ENC_READLOCATION_ANY, maxlength);
 		log_message("discarding some bytes\n");
 	} else {
-		enc_RBM(dev, data, dev->next_frame_location + 6, length);
+		enc_RBM(dev, data, ENC_READLOCATION_ANY, length);
 	}
 
 	receive_end(dev, header);
@@ -491,7 +486,7 @@ int enc_read_received_pbuf(enc_device_t *dev, struct pbuf **buf)
 	if (*buf == NULL)
 		log_message("failed to allocate buf of length %u, discarding", length);
 	else
-		enc_RBM(dev, (*buf)->payload, dev->next_frame_location + 6, length);
+		enc_RBM(dev, (*buf)->payload, ENC_READLOCATION_ANY, length);
 
 	receive_end(dev, header);
 

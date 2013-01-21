@@ -126,3 +126,5 @@ typedef enum {
 	ENC_LEDA = 8,
 	ENC_LEDB = 4,
 } enc_led_t;
+
+#define ENC_READLOCATION_ANY (uint16_t)(~0)
