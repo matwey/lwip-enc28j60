@@ -29,8 +29,8 @@ int enc_setup_basic(enc_device_t *dev)
 		return 1;
 
 	dev->last_used_register = ENC_BANK_INDETERMINATE;
-	dev->rxbufsize = -1;
-	dev->rdpt = -1;
+	dev->rxbufsize = ~0;
+	dev->rdpt = ~0;
 
 	enc_BFS(dev, ENC_ECON2, ENC_ECON2_AUTOINC);
 
@@ -293,7 +293,6 @@ void enc_ethernet_setup(enc_device_t *dev, uint16_t rxbufsize, uint8_t mac[6])
 
 	/********* receive buffer setup according to 6.1 ********/
 
-	dev->rxbufsize = rxbufsize;
 	enc_WCR16(dev, ENC_ERXSTL, 0); /* see errata, must be 0 */
 	set_erxnd(dev, rxbufsize);
 	enc_WCR16(dev, ENC_ERXRDPTL, 0);
