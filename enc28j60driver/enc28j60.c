@@ -11,6 +11,14 @@
  * DS39662D
  * */
 
+#ifdef ENC28J60_USE_PBUF
+#define DEBUG(...) LWIP_DEBUGF(NETIF_DEBUG, (__VA_ARGS__))
+#endif
+
+#ifndef DEBUG
+#error "Please provide a DEBUG(...) macro that behaves like a printf."
+#endif
+
 /** This access/cast happens too often to be written out explicitly */
 #define HWDEV (enchw_device_t*)dev->hwdev
 
@@ -80,12 +88,12 @@ uint8_t enc_bist(enc_device_t *dev)
 	enc_BFS(dev, ENC_EBSTCON, ENC_EBSTCON_BISTST);
 	/* wait a second -- never took any time yet */
 	while(enc_RCR(dev, ENC_EBSTCON) & ENC_EBSTCON_BISTST)
-		log_message("(%02x)", enc_RCR(dev, ENC_EBSTCON));
+		DEBUG("(%02x)", enc_RCR(dev, ENC_EBSTCON));
 	/* 7. */
 	enc_BFS(dev, ENC_ECON1, ENC_ECON1_DMAST);
 	/* 8. */
 	while(enc_RCR(dev, ENC_ECON1) & ENC_ECON1_DMAST)
-		log_message("[%02x]", enc_RCR(dev, ENC_ECON1));
+		DEBUG("[%02x]", enc_RCR(dev, ENC_ECON1));
 
 	/* 9.: FIXME pull this in */
 
@@ -127,9 +135,9 @@ uint8_t enc_bist_manual(enc_device_t *dev)
 
 	enc_BFS(ENC_ECON1, ENC_ECON1_CSUMEN | ENC_ECON1_DMAST);
 
-	while (enc_RCR(ENC_ECON1) & ENC_ECON1_DMAST) log_message(".");
+	while (enc_RCR(ENC_ECON1) & ENC_ECON1_DMAST) DEBUG(".");
 
-	log_message("csum %08x", enc_RCR16(ENC_EDMACSL));
+	DEBUG("csum %08x", enc_RCR16(ENC_EDMACSL));
 	*/
 
 	return 0;
@@ -383,7 +391,7 @@ void transmit_end(enc_device_t *dev, uint16_t length)
 
 	uint8_t result[7];
 	enc_RBM(dev, result, dev->rxbufsize + 1 + length, 7);
-	log_message("transmitted. %02x %02x %02x %02x %02x %02x %02x\n", result[0], result[1], result[2], result[3], result[4], result[5], result[6]);
+	DEBUG("transmitted. %02x %02x %02x %02x %02x %02x %02x\n", result[0], result[1], result[2], result[3], result[4], result[5], result[6]);
 
 	/* FIXME: parse that and return reasonable state */
 }
@@ -437,11 +445,11 @@ void receive_end(enc_device_t *dev, uint8_t header[6])
 		enc_WCR16(dev, ENC_ERXRDPTL, dev->next_frame_location - 1);
 	/* workaround end */
 
-	log_message("before %d, ", enc_RCR(dev, ENC_EPKTCNT));
+	DEBUG("before %d, ", enc_RCR(dev, ENC_EPKTCNT));
 	enc_BFS(dev, ENC_ECON2, ENC_ECON2_PKTDEC);
-	log_message("after %d.\n", enc_RCR(dev, ENC_EPKTCNT));
+	DEBUG("after %d.\n", enc_RCR(dev, ENC_EPKTCNT));
 
-	log_message("read with header (%02x %02x) %02x %02x %02x %02x.\n", header[1], /* swapped due to endianness -- i want to read 1234 */ header[0], header[2], header[3], header[4], header[5]);
+	DEBUG("read with header (%02x %02x) %02x %02x %02x %02x.\n", header[1], /* swapped due to endianness -- i want to read 1234 */ header[0], header[2], header[3], header[4], header[5]);
 }
 
 /** Read a received frame into data; may only be called when one is
@@ -458,7 +466,8 @@ uint16_t enc_read_received(enc_device_t *dev, uint8_t *data, uint16_t maxlength)
 	if (length > maxlength)
 	{
 		enc_RBM(dev, data, ENC_READLOCATION_ANY, maxlength);
-		log_message("discarding some bytes\n");
+		DEBUG("discarding some bytes\n");
+		/* FIXME: should that really be accepted at all? */
 	} else {
 		enc_RBM(dev, data, ENC_READLOCATION_ANY, length);
 	}
@@ -483,7 +492,7 @@ int enc_read_received_pbuf(enc_device_t *dev, struct pbuf **buf)
 
 	*buf = pbuf_alloc(PBUF_RAW, length, PBUF_RAM);
 	if (*buf == NULL)
-		log_message("failed to allocate buf of length %u, discarding", length);
+		DEBUG("failed to allocate buf of length %u, discarding", length);
 	else
 		enc_RBM(dev, (*buf)->payload, ENC_READLOCATION_ANY, length);
 

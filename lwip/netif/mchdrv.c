@@ -20,12 +20,12 @@ void mchdrv_poll(struct netif *netif) {
 	if (epktcnt) {
 		if (enc_read_received_pbuf(&encdevice, &buf) == 0)
 		{
-			log_message("incoming: %d packages, first read into %x\n", epktcnt, (unsigned int)(buf));
+			LWIP_DEBUGF(NETIF_DEBUG, ("incoming: %d packages, first read into %x\n", epktcnt, (unsigned int)(buf)));
 			result = netif->input(buf, netif);
-			log_message("received with result %d\n", result);
+			LWIP_DEBUGF(NETIF_DEBUG, ("received with result %d\n", result));
 		} else {
 			/* FIXME: error reporting */
-			log_message("didn't receive.\n");
+			LWIP_DEBUGF(NETIF_DEBUG, ("didn't receive.\n"));
 		}
 	}
 }
@@ -33,7 +33,7 @@ void mchdrv_poll(struct netif *netif) {
 static err_t mchdrv_linkoutput(struct netif *netif, struct pbuf *p)
 {
 	enc_transmit_pbuf(&encdevice, p);
-	log_message("sent %d bytes.\n", p->tot_len);
+	LWIP_DEBUGF(NETIF_DEBUG, ("sent %d bytes.\n", p->tot_len));
 	/* FIXME: evaluate result state */
 	return ERR_OK;
 }
@@ -41,18 +41,18 @@ static err_t mchdrv_linkoutput(struct netif *netif, struct pbuf *p)
 err_t mchdrv_init(struct netif *netif) {
 	int result;
 
-	log_message("Starting mchdrv_init.\n");
+	LWIP_DEBUGF(NETIF_DEBUG, ("Starting mchdrv_init.\n"));
 
 	result = enc_setup_basic(&encdevice);
 	if (result != 0)
 	{
-		log_message("Error %d in enc_setup, interface setup aborted.\n", result);
+		LWIP_DEBUGF(NETIF_DEBUG, ("Error %d in enc_setup, interface setup aborted.\n", result));
 		return ERR_IF;
 	}
 	result = enc_bist_manual(&encdevice);
 	if (result != 0)
 	{
-		log_message("Error %d in enc_bist_manual, interface setup aborted.\n", result);
+		LWIP_DEBUGF(NETIF_DEBUG, ("Error %d in enc_bist_manual, interface setup aborted.\n", result));
 		return ERR_IF;
 	}
 	enc_ethernet_setup(&encdevice, 4*1024, mac_addr);
@@ -66,7 +66,7 @@ err_t mchdrv_init(struct netif *netif) {
 
 	netif->flags |= NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP;
 
-	log_message("Driver initialized.\n");
+	LWIP_DEBUGF(NETIF_DEBUG, ("Driver initialized.\n"));
 
 	return ERR_OK;
 }
