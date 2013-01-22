@@ -17,7 +17,7 @@ recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *addr, uint16_t p
 	struct pbuf *response;
 	struct pbuf *message;
 
-	led0_on();
+	led1_on();
 
 	response = pbuf_alloc(PBUF_TRANSPORT, 0, PBUF_RAM);
 	message = pbuf_alloc(PBUF_RAW, sizeof(message_text), PBUF_ROM);
@@ -30,7 +30,7 @@ recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *addr, uint16_t p
 
 	pbuf_free(p);
 
-	led0_off();
+	led1_off();
 }
 
 void testapp_init(void)

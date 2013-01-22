@@ -1,5 +1,19 @@
 /* SD hardware configuration for the Olimex MOD-ENC28J60 as wired through the
- * custom cable to a EFM32STK board */
+ * custom cable to a EFM32STK board.
+ *
+ * Wire like this:
+ *
+ *   STK EXT pin  ------  UEXT plug pin
+ *        7        (SS)          10
+ *        4       (MOSI)          8
+ *        6       (MISO)          7
+ *        8       (CLCK)          9
+ *       19        (GND)          2
+ *       20        (3V3)          1
+ *
+ * Don't use VMCU (the STK's pin 2) as 3V3 supply, it can't provide the current
+ * the ENC28J60 needs.
+ * */
 
 #include "board.h"
 
