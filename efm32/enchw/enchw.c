@@ -8,7 +8,7 @@
 #include <em_cmu.h>
 #include <em_usart.h>
 
-#include "enchw-config.c"
+#include "enchw-config.h"
 
 static USART_InitSync_TypeDef enc28j60_usart_config = \
   { enable: usartEnable, \
