@@ -22,7 +22,7 @@ LWIP_OBJS = etharp.o mem.o memp.o netif.o pbuf.o raw.o stats.o sys.o tcp.o tcp_i
 CFLAGS += -I./lwip/src/include/ipv4 -I./lwip/src/include/ipv6 -I./lwip/src/include -I.
 VPATH += lwip/src/netif lwip/src/core lwip/src/api lwip/src/core/ipv4
 
-NETIF_OBJS = mchdrv.o
+NETIF_OBJS = mchdrv.o testapp.o
 CFLAGS += -I../../lwip
 VPATH += ../../lwip/netif
 

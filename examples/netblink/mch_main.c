@@ -40,6 +40,8 @@ int main(void)
 
     mch_net_init();
 
+    testapp_init();
+
     while (1) {
         mch_net_poll();
     }
