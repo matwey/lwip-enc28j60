@@ -10,6 +10,12 @@
 #define EXT7_PIN 4
 #define EXT8_PORT gpioPortD
 #define EXT8_PIN 2
+#define EXT12_PORT gpioPortD
+#define EXT12_PIN 4
+#define EXT14_PORT gpioPortD
+#define EXT14_PIN 5
+#define EXT15_PORT gpioPortD
+#define EXT15_PIN 7
 
 #define LED0_PORT gpioPortE
 #define LED0_PIN 2
