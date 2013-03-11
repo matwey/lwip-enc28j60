@@ -34,6 +34,10 @@ void enchw_setup(enchw_device_t __attribute__((unused)) *dev)
 	GPIO_PinModeSet(SCK_PORT, SCK_PIN, gpioModePushPull, 0);
 	GPIO_PinModeSet(MISO_PORT, MISO_PIN, gpioModeInput, 0);
 
+#if HAS_RESET_PIN
+	GPIO_PinModeSet(RESET_PORT, RESET_PIN, gpioModePushPull, 1);
+#endif
+
 	USART_Reset(USART);
 	USART_InitSync(USART, &enc28j60_usart_config);
 

@@ -4,6 +4,8 @@
 
 #define EXT4_PORT gpioPortD
 #define EXT4_PIN 0
+#define EXT5_PORT gpioPortC
+#define EXT5_PIN 3
 #define EXT6_PORT gpioPortD
 #define EXT6_PIN 1
 #define EXT7_PORT gpioPortC
@@ -35,7 +37,7 @@
 
 #define EXT_LEUART LEUART0
 #define EXT_LEUART_CLOCK cmuClock_LEUART0
-#define EXT_LEUART_LOCATION 0
+#define EXT_LEUART_ROUTELOCATION LEUART_ROUTE_LOCATION_LOC0
 
 void board_setup(void);
 void led0_on(void);
