@@ -20,6 +20,10 @@ static USART_InitSync_TypeDef enc28j60_usart_config = \
     clockMode: usartClockMode0 \
   };
 
+
+static volatile uint8_t j=0;
+#define pause() while(++j)
+
 void enchw_setup(enchw_device_t __attribute__((unused)) *dev)
 {
 	CMU_ClockEnable(cmuClock_GPIO, true);
@@ -35,6 +39,10 @@ void enchw_setup(enchw_device_t __attribute__((unused)) *dev)
 	GPIO_PinModeSet(MISO_PORT, MISO_PIN, gpioModeInput, 0);
 
 #if HAS_RESET_PIN
+	GPIO_PinModeSet(RESET_PORT, RESET_PIN, gpioModePushPull, 0);
+	pause();
+	pause();
+	pause();
 	GPIO_PinModeSet(RESET_PORT, RESET_PIN, gpioModePushPull, 1);
 #endif
 
@@ -44,10 +52,6 @@ void enchw_setup(enchw_device_t __attribute__((unused)) *dev)
         /* routing setup: cs is done manually */
         USART->ROUTE = USART_ROUTE_TXPEN | USART_ROUTE_RXPEN | USART_ROUTE_CLKPEN | (USART_LOCATION << 8);
 }
-
-
-static volatile uint8_t j=0;
-#define pause() while(++j)
 
 void enchw_select(enchw_device_t __attribute__((unused)) *dev)
 {
