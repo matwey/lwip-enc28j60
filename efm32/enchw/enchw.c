@@ -30,7 +30,7 @@ void enchw_setup(enchw_device_t __attribute__((unused)) *dev)
 	CMU_ClockEnable(USART_CLOCK, true);
 
 	/* just an experiment: use *fast* clock */
-	CMU_ClockSelectSet(cmuClock_HF, cmuSelect_HFXO);
+	CMU_HFRCOBandSet(cmuHFRCOBand_28MHz);
 
 	/* ss is active low */
 	GPIO_PinModeSet(SS_PORT, SS_PIN, gpioModePushPull, 1);
