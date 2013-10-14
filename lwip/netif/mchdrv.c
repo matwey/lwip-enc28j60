@@ -64,6 +64,8 @@ err_t mchdrv_init(struct netif *netif) {
 	netif->hwaddr_len = 6;
 	memcpy(netif->hwaddr, mac_addr, 6);
 
+	netif->mtu = 1500; /** FIXME check with documentation when jumboframes can be ok */
+
 	netif->flags |= NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP;
 
 	LWIP_DEBUGF(NETIF_DEBUG, ("Driver initialized.\n"));
