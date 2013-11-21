@@ -40,4 +40,6 @@ MY_OBJS = mch_main.o
 
 OBJS += $(patsubst %,${BUILDDIR}/%,${BOARD_OBJS} ${MY_OBJS} ${DRIVER_OBJS} ${NETIF_OBJS} ${LWIP_OBJS})
 
+CFLAGS += -pedantic -Wall -std=c99
+
 include /usr/share/energymicrolib/Makefile.complete

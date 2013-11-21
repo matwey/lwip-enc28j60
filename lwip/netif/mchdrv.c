@@ -9,7 +9,6 @@ uint8_t mac_addr[6] = {0x02 /* u/l, local */, 0x04, 0xA3, /* microchip's oui as 
 enc_device_t encdevice;
 
 void mchdrv_poll(struct netif *netif) {
-	int receivedlength;
 	err_t result;
 	struct pbuf *buf = NULL;
 

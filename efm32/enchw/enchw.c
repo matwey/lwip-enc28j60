@@ -10,14 +10,14 @@
 
 #include "enchw-config.h"
 
-static USART_InitSync_TypeDef enc28j60_usart_config = \
-  { enable: usartEnable, \
-    refFreq: 0, \
-    baudrate: 2000000,  /* 2mhz works well with the current pause commands, 10mhz doesnt */ \
-    databits: usartDatabits8, \
-    master: true, \
-    msbf: true, \
-    clockMode: usartClockMode0 \
+static USART_InitSync_TypeDef enc28j60_usart_config = {
+    .enable = usartEnable,
+    .refFreq = 0,
+    .baudrate = 2000000,  /* 2mhz works well with the current pause commands, 10mhz doesnt */
+    .databits = usartDatabits8,
+    .master = true,
+    .msbf = true,
+    .clockMode = usartClockMode0,
   };
 
 

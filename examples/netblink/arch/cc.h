@@ -35,7 +35,7 @@ typedef uintptr_t   mem_ptr_t;
 #define PACK_STRUCT_END
 
 /* Nothing for lack of output possibilities */
-#define LWIP_PLATFORM_DIAG(x) 1
-#define LWIP_PLATFORM_ASSERT(x) 1
+#define LWIP_PLATFORM_DIAG(x) {}
+#define LWIP_PLATFORM_ASSERT(x) {}
 
 #endif /* MY_ARCH_CC_H__ */

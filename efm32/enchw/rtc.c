@@ -12,9 +12,9 @@
 #include <em_chip.h>
 
 const RTC_Init_TypeDef my_rtc_settings = {
-	enable: true,
-	debugRun: true,
-	comp0Top: false,
+	.enable = true,
+	.debugRun = true,
+	.comp0Top = false,
 };
 
 static volatile uint8_t high32; /** The overflowing part of the 24bit RTC register */
@@ -125,7 +125,7 @@ uint64_t rtc_get64(void)
 
 	second = RTC_CounterGet();
 
-	return ((uint64_t)my_high64 << 32) + (((uint64_t)my_high32 + (overflew || (second < first))) << 24) | second | (1<<33);
+	return (((uint64_t)my_high64 << 32) + (((uint64_t)my_high32 + (overflew || (second < first))) << 24)) | second;
 }
 
 uint32_t rtc_get_ms(void)

@@ -11,6 +11,8 @@
 #include <rtc.h>
 #include <board.h>
 
+#include <testapp.h>
+
 struct ip_addr mch_myip_addr = {0x0200a8c0UL}; /* 192.168.0.2 */
 struct ip_addr gw_addr = {0x0100a8c0UL}, netmask = {0x000000ffUL}; /* 192.168.0.1 */
 
