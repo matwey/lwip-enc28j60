@@ -3,10 +3,12 @@
 #include <lwip/netif.h>
 #include <lwip/init.h>
 #include <lwip/stats.h>
+#include <lwip/timers.h>
 #include <netif/etharp.h>
 
 #include <netif/mchdrv.h>
 
+#include <rtc.h>
 #include <board.h>
 
 struct ip_addr mch_myip_addr = {0x0200a8c0UL}; /* 192.168.0.2 */
@@ -34,8 +36,16 @@ void mch_net_poll(void)
     mchdrv_poll(&mchdrv_netif);
 }
 
+uint32_t sys_now(void)
+{
+	/* assuming the 512Hz implemenetation of the provided rtc, and that 2.4% error are ok for lwip's sys_now */
+	return sys_now() * 2;
+}
+
 int main(void)
 {
+    rtc_setup();
+
     board_setup();
 
     mch_net_init();
@@ -44,5 +54,6 @@ int main(void)
 
     while (1) {
         mch_net_poll();
+        sys_check_timeouts();
     }
 }

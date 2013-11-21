@@ -19,7 +19,7 @@ BOARD_OBJS = board.o
 CFLAGS += -I ../../efm32/boards/${BOARD}/
 VPATH += ../../efm32/boards/${BOARD}/
 
-DRIVER_OBJS = enc28j60.o enchw.o
+DRIVER_OBJS = enc28j60.o enchw.o rtc.o
 VPATH += ../../enc28j60driver ../../efm32/enchw
 CFLAGS += -DENC28J60_USE_PBUF # configure the enc28j60 backend to build functions that involve lwip buffer mgmt
 CFLAGS += -I../../enc28j60driver -I../../efm32/enchw
