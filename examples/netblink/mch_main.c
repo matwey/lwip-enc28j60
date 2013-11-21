@@ -41,7 +41,7 @@ void mch_net_poll(void)
 uint32_t sys_now(void)
 {
 	/* assuming the 512Hz implemenetation of the provided rtc, and that 2.4% error are ok for lwip's sys_now */
-	return sys_now() * 2;
+	return rtc_get32() * 2;
 }
 
 int main(void)
