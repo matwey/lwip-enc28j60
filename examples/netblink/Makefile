@@ -44,6 +44,6 @@ CFLAGS += -pedantic -Wall -std=c99
 
 # adaptions to debian gcc
 CFLAGS += -I/usr/arm-none-eabi/include/ -ffreestanding -I/usr/include/newlib/
-LDFLAGS += -L/usr/arm-none-eabi/lib/ -L/usr/lib/arm-none-eabi/newlib/armv7-m/ -B/usr/lib/gcc/arm-none-eabi/4.8.2/armv7-m/
+LDFLAGS += -L/usr/arm-none-eabi/lib/ -L/usr/lib/arm-none-eabi/newlib/armv7-m/
 
 include /usr/share/energymicrolib/Makefile.complete
