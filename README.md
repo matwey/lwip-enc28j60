@@ -16,7 +16,9 @@ Quick start
 
 * Get a ENC28J60 chip with UEXT connector (MOD-ENC28J60 from Olimex)
 * Get a Gecko chip with UEXT connector (EM-32G880F128-H from Olimex)
+* Get an SWD programmer (any of the EnergyMicro starter kits)
 * Wire everything up the only way the connectors fit
+* Get an `arm-none-eabi-gcc` (eg. from the Debian package `gcc-arm-none-eabi`)
 * Get the EFM32 toolchain set up (FIXME: that could need some more details)
 * Fetch the lwIP library and build the example code
 
@@ -24,8 +26,6 @@ Quick start
       git clone git://git.savannah.nongnu.org/lwip.git -b DEVEL-1_4_1
       make
 
-* FIXME: Unless you use an EnergyMicro STK board as a programmer, configure
-  your programmer.
 * Upload the program:
 
       make upload
