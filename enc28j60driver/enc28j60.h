@@ -1,7 +1,28 @@
+/**
+ *
+ * @addtogroup enc28j60 ENC28J60 driver
+ *
+ * Driver for the MicroChip ENC28J60 Ethernet module.
+ *
+ * This software requires an implementation of the `enchw_*` interface
+ * specified by `enchw.h` (which describes a very basic SPI interface), and
+ * provides the various command types as well as read and write access to the
+ * ENC28J60 memory.
+ *
+ * Optionally, support for lwIP's pbuf memory allocation can be compiled in by
+ * defining `ENC28J60_USE_PBUF`.
+ *
+ * @{
+ */
+
 #include "enc28j60-consts.h"
+#ifdef ENC28J60_USE_PBUF
+#include <lwip/pbuf.h>
+#endif
 
 /** Container that stores locally cached information about the ENC28J60 device
  * (eg. last used register) to optimize access. */
+
 typedef struct {
 	/** The chip's active register page ENC_ECON1[0:1] */
 	enc_register_t last_used_register;
@@ -40,8 +61,8 @@ void enc_transmit(enc_device_t *dev, uint8_t *data, uint16_t length);
 uint16_t enc_read_received(enc_device_t *dev, uint8_t *data, uint16_t maxlength);
 
 #ifdef ENC28J60_USE_PBUF
-#include <lwip/pbuf.h>
-
 int enc_read_received_pbuf(enc_device_t *dev, struct pbuf **buf);
 void enc_transmit_pbuf(enc_device_t *dev, struct pbuf *buf);
 #endif
+
+/** @} */

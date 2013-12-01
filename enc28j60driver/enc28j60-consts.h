@@ -1,3 +1,10 @@
+/**
+ * @addtogroup enc28j60
+ * @{
+ * @addtogroup enc28j60-consts ENC28J60 constants
+ * @{
+ */
+
 #define ENC_RAMSIZE (8 * 1024)
 
 typedef enum {
@@ -128,3 +135,5 @@ typedef enum {
 } enc_led_t;
 
 #define ENC_READLOCATION_ANY (uint16_t)(~0)
+
+/** @} @} */

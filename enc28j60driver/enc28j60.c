@@ -1,17 +1,19 @@
-#include "enchw.h"
-#include "enc28j60.h"
-
-/** @file
+/**
+ * @addtogroup enc28j60 ENC28J60 driver
+ * @{
+ * @addtogroup enc28j60-impl ENC28J60 driver implementation
+ * @{
  *
- * Basic driver for ENC28J60 Ethernet drivers. This driver is not specific to a
- * particular network stack, even though some functions were particularly
- * designed for use with lwIP pbuf objects.
+ * .
  *
  * Documentation references in here are relative to the ENC28J60 Data Sheet
  * DS39662D
  * */
 
-#ifdef ENC28J60_USE_PBUF
+#include "enchw.h"
+#include "enc28j60.h"
+
+#if defined(ENC28J60_USE_PBUF) && !defined(DEBUG)
 #define DEBUG(...) LWIP_DEBUGF(NETIF_DEBUG, (__VA_ARGS__))
 #endif
 
@@ -64,7 +66,7 @@ static void set_erdpt(enc_device_t *dev, uint16_t erdpt)
 /** Run the built-in diagnostics. Returns 0 on success or an unspecified
  * error code.
  *
- * FIXME: doesn't produce correct results (waits indefinitely on DMA, doesn't
+ * @todo doesn't produce correct results (waits indefinitely on DMA, doesn't
  * alter pattern, addressfill produces correct checksum but wrong data (0xff
  * everywhere)
  * */
@@ -95,7 +97,7 @@ uint8_t enc_bist(enc_device_t *dev)
 	while(enc_RCR(dev, ENC_ECON1) & ENC_ECON1_DMAST)
 		DEBUG("[%02x]", enc_RCR(dev, ENC_ECON1));
 
-	/* 9.: FIXME pull this in */
+	/* 9.: @todo pull this in */
 
 	return 0;
 }
@@ -172,7 +174,7 @@ static void ensure_register_accessible(enc_device_t *dev, enc_register_t r)
 	select_page(dev, r >> 6);
 }
 
-/* FIXME: applies only to eth registers, not to mii ones */
+/** @todo applies only to eth registers, not to mii ones */
 uint8_t enc_RCR(enc_device_t *dev, enc_register_t reg) {
 	ensure_register_accessible(dev, reg);
 	return command(dev, reg & ENC_REGISTERMASK, 0);
@@ -212,7 +214,7 @@ static void WBM_raw(enc_device_t *dev, uint8_t *src, uint16_t length)
 	while(length--)
 		enchw_exchangebyte(HWDEV, *(src++));
 	enchw_unselect(HWDEV);
-	/* FIXME: this is actually just triggering another pause */
+	/** @todo this is actually just triggering another pause */
 	enchw_unselect(HWDEV);
 }
 
@@ -225,12 +227,14 @@ void enc_WBM(enc_device_t *dev, uint8_t *src, uint16_t start, uint16_t length)
 
 /** 16-bit register read. This only applies to ENC28J60 registers whose low
  * byte is at an even offset and whose high byte is one above that. Can be
- * passed either L or H sub-register. */
-/* FIXME: could use enc_register16_t */
+ * passed either L or H sub-register.
+ *
+ * @todo could use enc_register16_t
+ * */
 uint16_t enc_RCR16(enc_device_t *dev, enc_register_t reg) {
 	return (enc_RCR(dev, reg|1) << 8) | enc_RCR(dev, reg&~1);
 }
-/** 16-bit register read. Compare enc_RCR16. Writes the lower byte first, then
+/** 16-bit register write. Compare enc_RCR16. Writes the lower byte first, then
  * the higher, as required for the MII interfaces as well as for ERXRDPT. */
 void enc_WCR16(enc_device_t *dev, uint8_t reg, uint16_t data) {
 	enc_WCR(dev, reg&~1, data & 0xff); enc_WCR(dev, reg|1, data >> 8);
@@ -246,7 +250,7 @@ int enc_wait(enc_device_t *dev)
 {
 	int i = 0;
 	while (!(enc_RCR(dev, ENC_ESTAT) & ENC_ESTAT_CLKRDY))
-		/* FIXME: as soon as we need a clock somewhere else, make this
+		/** @todo as soon as we need a clock somewhere else, make this
 		 * time and not iteration based */
 		if (i++ == 100000) return 1;
 	return 0;
@@ -297,7 +301,7 @@ void enc_ethernet_setup(enc_device_t *dev, uint16_t rxbufsize, uint8_t mac[6])
 	{
 		enc_BFS(dev, ENC_ECON2, ENC_ECON2_PKTDEC);
 	}
-	enc_BFC(dev, ENC_ECON1, ENC_ECON1_TXRST | ENC_ECON1_RXRST); /* FIXME: this should happen later, but when i don't do it here, things won't come up again. probably a problem in the startup sequence. */
+	enc_BFC(dev, ENC_ECON1, ENC_ECON1_TXRST | ENC_ECON1_RXRST); /** @todo this should happen later, but when i don't do it here, things won't come up again. probably a problem in the startup sequence. */
 
 	/********* receive buffer setup according to 6.1 ********/
 
@@ -355,7 +359,7 @@ void transmit_start(enc_device_t *dev)
 	uint8_t control_byte = 0; /* no overrides */
 
 	/* 1. */
-	/* FIXME: we only send a single frame blockingly, starting at the end of rxbuf */
+	/** @todo we only send a single frame blockingly, starting at the end of rxbuf */
 	enc_WCR16(dev, ENC_ETXSTL, dev->rxbufsize);
 	/* 2. */
 	enc_WBM(dev, &control_byte, dev->rxbufsize, 1);
@@ -393,12 +397,12 @@ void transmit_end(enc_device_t *dev, uint16_t length)
 	enc_RBM(dev, result, dev->rxbufsize + 1 + length, 7);
 	DEBUG("transmitted. %02x %02x %02x %02x %02x %02x %02x\n", result[0], result[1], result[2], result[3], result[4], result[5], result[6]);
 
-	/* FIXME: parse that and return reasonable state */
+	/** @todo parse that and return reasonable state */
 }
 
 void enc_transmit(enc_device_t *dev, uint8_t *data, uint16_t length)
 {
-	/* FIXME: check buffer size */
+	/** @todo check buffer size */
 	transmit_start(dev);
 	transmit_partial(dev, data, length);
 	transmit_end(dev, length);
@@ -412,7 +416,7 @@ void enc_transmit_pbuf(enc_device_t *dev, struct pbuf *buf)
 {
 	uint16_t length = buf->tot_len;
 
-	/* FIXME: check buffer size */
+	/** @todo check buffer size */
 	transmit_start(dev);
 	while(1) {
 		transmit_partial(dev, buf->payload, buf->len);
@@ -467,7 +471,7 @@ uint16_t enc_read_received(enc_device_t *dev, uint8_t *data, uint16_t maxlength)
 	{
 		enc_RBM(dev, data, ENC_READLOCATION_ANY, maxlength);
 		DEBUG("discarding some bytes\n");
-		/* FIXME: should that really be accepted at all? */
+		/** @todo should that really be accepted at all? */
 	} else {
 		enc_RBM(dev, data, ENC_READLOCATION_ANY, length);
 	}
