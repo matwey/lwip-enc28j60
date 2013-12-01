@@ -1,4 +1,6 @@
-/** @file
+/** 
+ * @addtogroup rtc RTC
+ * @{
  *
  * A simple real time clock interface that provides up to 64bit tick counts of
  * implementation-defined ticks, and a millisecond interface.
@@ -26,6 +28,8 @@
  *
  * It is expected that both the hardware implementation and the driver logic
  * will resort to using this for timeouts sooner or later.
+ *
+ * @file
  * */
 
 #include <stdint.h>
@@ -55,3 +59,5 @@ uint64_t rtc_get64(void);
 
 /** Get the number of ms expired since the start of the system. */
 uint64_t rtc_get_ms64(void)/* __attribute__((optimize("O3")))*/;
+
+/** @} */

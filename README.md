@@ -20,20 +20,20 @@ Quick start
 * Get the EFM32 toolchain set up (FIXME: that could need some more details)
 * Fetch the lwIP library and build the example code
 
-    cd examples/netblink/
-    git clone git://git.savannah.nongnu.org/lwip.git -b DEVEL-1_4_1
-    make
+      cd examples/netblink/
+      git clone git://git.savannah.nongnu.org/lwip.git -b DEVEL-1_4_1
+      make
 
 * FIXME: Unless you use an EnergyMicro STK board as a programmer, configure
   your programmer.
 * Upload the program:
 
-    make upload
+      make upload
 
 * Configure your Ethernet interface as 192.168.0.1/24
 * Test everything:
 
-    socat udp:192.168.0.2:1234  -
+      socat udp:192.168.0.2:1234  -
 
 * Enjoy that the LED blinks every time you send a line.
 
@@ -45,7 +45,7 @@ agnostic, ie. it just implements typical operations conducted with the ENC28J60
 (eg. setup, doing a self test, reading a received frame into pre-allocated
 memory).
 
-If compiled with -DENC28J60_USE_PBUF, two small additional functions,
+If compiled with `-DENC28J60_USE_PBUF`, two small additional functions,
 `enc_read_received_pbuf` and `enc_transmit_pbuf`, are added, which are designed
 to use the lwIP pbuf memory management system. This is to keep the interfaces
 simple.

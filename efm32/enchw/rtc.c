@@ -1,9 +1,12 @@
-/** @file
+/** 
+ * @addtogroup rtc RTC
+ * @{
+ * @addtogroup rtc-efm32impl EFM32 implementation
+ * @{
  *
  * An implementation of the interface described in `rtc.h` for EMLIB (Energy
  * Micro EFM32) devices, which does not need a high-priorized interrupt handler
  * routine and can be queried inside interrupts.
- *
  */
 
 #include "rtc.h"
@@ -17,8 +20,8 @@ const RTC_Init_TypeDef my_rtc_settings = {
 	.comp0Top = false,
 };
 
-static volatile uint8_t high32; /** The overflowing part of the 24bit RTC register */
-static volatile uint32_t high64; /** The overflowing part of the 32bit value composed of high32 and the register */
+static volatile uint8_t high32; /**< The overflowing part of the 24bit RTC register */
+static volatile uint32_t high64; /**< The overflowing part of the 32bit value composed of high32 and the register */
 
 //void rtc_maintenance(void)
 void rtc_isr(void) /* in cmsis terminology: RTC_IRQHandler */
@@ -144,3 +147,5 @@ uint64_t rtc_get_ms64(void)
 	/* this assumes the 512Hz ticks configured above */
 	return rtc_get64() * 1000 / 512;
 }
+
+/** @} @} */

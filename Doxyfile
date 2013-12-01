@@ -1,0 +1,31 @@
+PROJECT_NAME           = "ENC28J60 driver"
+PROJECT_BRIEF          = "Generic driver for the MicroChip ENC28J60, with hardware backend for the EnergyMicro EFM32 platform and glue code for lwIP integration"
+
+OPTIMIZE_OUTPUT_FOR_C  = YES
+
+# maybe...
+#EXTRACT_ALL            = YES
+
+RECURSIVE = YES
+
+# this is low-level stuff and also serves as internal documentation. those
+# things aren't technically private anyway.
+EXTRACT_PRIVATE = YES
+
+# again, this is internal documentation too
+EXTRACT_STATIC = YES
+
+# i personally consider this a useful convention
+JAVADOC_AUTOBRIEF      = YES
+
+USE_MDFILE_AS_MAINPAGE = README.md
+
+#IGNORE_PREFIX          = sensorlog_
+
+GENERATE_LATEX         = NO
+
+# explain to doxygen that __attribute__ can be safely ignored without breaking
+# too many other things
+MACRO_EXPANSION = YES
+EXPAND_ONLY_PREFEF = YES
+PREDEFINED = __attribute__(x)=
