@@ -46,9 +46,9 @@ agnostic, ie. it just implements typical operations conducted with the ENC28J60
 memory).
 
 If compiled with `-DENC28J60_USE_PBUF`, two small additional functions,
-`enc_read_received_pbuf` and `enc_transmit_pbuf`, are added, which are designed
-to use the lwIP pbuf memory management system. This is to keep the interfaces
-simple.
+@ref enc_read_received_pbuf and @ref enc_transmit_pbuf, are added, which are
+designed to use the lwIP pbuf memory management system. This is to keep the
+interfaces simple.
 
 lwIP port
 ---------

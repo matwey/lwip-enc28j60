@@ -28,4 +28,4 @@ GENERATE_LATEX         = NO
 # too many other things
 MACRO_EXPANSION = YES
 EXPAND_ONLY_PREFEF = YES
-PREDEFINED = __attribute__(x)=
+PREDEFINED = __attribute__(x)= ENC28J60_USE_PBUF
