@@ -1,0 +1,6 @@
+# doxygen generated
+html
+# unless someone wants to do a submodule here
+examples/netblink/lwip
+# object and binary files
+examples/netblink/build
