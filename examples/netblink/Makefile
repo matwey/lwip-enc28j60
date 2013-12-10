@@ -17,10 +17,10 @@ SOURCEDIR = .
 
 BOARD_OBJS = board.o
 CFLAGS += -I ../../efm32/boards/${BOARD}/
-VPATH += ../../efm32/boards/${BOARD}/
+vpath %.c ../../efm32/boards/${BOARD}/
 
 DRIVER_OBJS = enc28j60.o enchw.o rtc.o
-VPATH += ../../enc28j60driver ../../efm32/enchw
+vpath %.c ../../enc28j60driver ../../efm32/enchw
 CFLAGS += -DENC28J60_USE_PBUF # configure the enc28j60 backend to build functions that involve lwip buffer mgmt
 CFLAGS += -I../../enc28j60driver -I../../efm32/enchw
 
@@ -30,15 +30,15 @@ CFLAGS += -I../../enc28j60driver -I../../efm32/enchw
 LWIP_OBJS = etharp.o mem.o memp.o netif.o pbuf.o raw.o stats.o sys.o tcp.o tcp_in.o tcp_out.o udp.o dhcp.o init.o def.o timers.o dns.o inet_chksum.o err.o icmp.o ip_frag.o ip_addr.o ip.o
 # -I. for lwipopts.h
 CFLAGS += -I./lwip/src/include/ipv4 -I./lwip/src/include/ipv6 -I./lwip/src/include -I.
-VPATH += lwip/src/netif lwip/src/core lwip/src/api lwip/src/core/ipv4
+vpath %.c lwip/src/netif lwip/src/core lwip/src/api lwip/src/core/ipv4
 
 NETIF_OBJS = mchdrv.o
 CFLAGS += -I../../lwip
-VPATH += ../../lwip/netif
+vpath %.c ../../lwip/netif
 
 MY_OBJS = mch_main.o testapp.o
 
-OBJS += $(patsubst %,${BUILDDIR}/%,${BOARD_OBJS} ${MY_OBJS} ${DRIVER_OBJS} ${NETIF_OBJS} ${LWIP_OBJS})
+OBJS += ${BOARD_OBJS} ${MY_OBJS} ${DRIVER_OBJS} ${NETIF_OBJS} ${LWIP_OBJS}
 
 CFLAGS += -pedantic -Wall -std=c99
 
@@ -46,9 +46,31 @@ CFLAGS += -pedantic -Wall -std=c99
 CFLAGS += -I/usr/arm-none-eabi/include/ -ffreestanding -I/usr/include/newlib/
 LDFLAGS += -L/usr/arm-none-eabi/lib/ -L/usr/lib/arm-none-eabi/newlib/armv7-m/
 
-include /usr/share/energymicrolib/Makefile.complete
+CFLAGS += -D${PARTNUMBER} -D${FAMILYNUMBER} -I/usr/arm-none-eabi/include/libopencmsis/
+CFLAGS += -Os -g -Wall -Wextra -fno-common -mcpu=cortex-m3 -mthumb -msoft-float -MD
 
-stlink_upload: build/main.bin
+LDFLAGS += -nostartfiles -Wl,--gc-sections -mthumb -msoft-float -mcpu=cortex-m3
+LDFLAGS += -lc -lnosys
+LDSCRIPT ?= libopencm3_efm32g880f128.ld
+# gotta ditch that
+LDFLAGS += -L /usr/arm-none-eabi/lib/ -lopencm3_efm32g  -T$(LDSCRIPT) -t
+
+OBJS += em_cmu.o em_gpio.o em_usart.o em_rtc.o em_emu.o system_efm32g.o
+vpath %.c /usr/lib/arm-none-eabi/src/energymicrolib/src/ ${HOME}/git/energymicrolib/Device/EnergyMicro/EFM32G/Source/
+
+OBJS += nvic.o
+vpath %.c ${HOME}/git/libopencm3/lib/cm3/
+
+CC = arm-none-eabi-gcc
+LD = arm-none-eabi-gcc
+
+# must be named like one of the source files
+mch_main: ${OBJS}
+
+mch_main.bin: mch_main
+	objcopy -Obinary $< $@
+
+stlink_upload: mch_main.bin
 	gdb-multiarch -x ./openocd-gdb.cfg \
 		-ex "monitor halt" \
 		-ex "monitor flash write_image erase $<" \
