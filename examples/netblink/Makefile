@@ -47,3 +47,15 @@ CFLAGS += -I/usr/arm-none-eabi/include/ -ffreestanding -I/usr/include/newlib/
 LDFLAGS += -L/usr/arm-none-eabi/lib/ -L/usr/lib/arm-none-eabi/newlib/armv7-m/
 
 include /usr/share/energymicrolib/Makefile.complete
+
+stlink_upload: build/main.bin
+	gdb-multiarch -x ./openocd-gdb.cfg \
+		-ex "monitor halt" \
+		-ex "monitor flash write_image erase $<" \
+		-ex "monitor verify_image $<" \
+		-ex "monitor reset" \
+		-ex "disconnect" \
+		-ex "quit"
+
+gdb: build/main.elf
+	gdb-multiarch -x ./openocd-gdb.cfg $<
