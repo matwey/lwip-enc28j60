@@ -55,8 +55,13 @@ LDSCRIPT ?= libopencm3_efm32g880f128.ld
 # gotta ditch that
 LDFLAGS += -L /usr/arm-none-eabi/lib/ -lopencm3_efm32g  -T$(LDSCRIPT)
 
+# energymicro emlib
+# this is adapt this if you have simplicity studio installed somewhere
+EMPATH = /usr/share/energymicro/studio
+
 OBJS += em_cmu.o em_gpio.o em_usart.o em_rtc.o em_emu.o system_efm32g.o
-vpath %.c /usr/lib/arm-none-eabi/src/energymicrolib/src/ ${HOME}/git/energymicrolib/Device/EnergyMicro/EFM32G/Source/
+CFLAGS += -I${EMPATH}/emlib/inc/ -I${EMPATH}/Device/EnergyMicro/EFM32G/Include/
+vpath %.c ${EMPATH}/emlib/src/ ${EMPATH}/Device/EnergyMicro/EFM32G/Source/
 
 OBJS += nvic.o
 vpath %.c ${HOME}/git/libopencm3/lib/cm3/
