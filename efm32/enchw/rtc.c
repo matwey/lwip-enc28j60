@@ -24,7 +24,7 @@ static volatile uint8_t high32; /**< The overflowing part of the 24bit RTC regis
 static volatile uint32_t high64; /**< The overflowing part of the 32bit value composed of high32 and the register */
 
 //void rtc_maintenance(void)
-void rtc_isr(void) /* in cmsis terminology: RTC_IRQHandler */
+void RTC_IRQHandler(void)
 {
 	if (!(RTC->IF & RTC_IF_OF)) return;
 
@@ -51,7 +51,7 @@ void rtc_setup(void)
 
 	RTC_IntEnable(RTC_IF_OF);
 
-	nvic_enable_irq(NVIC_RTC_IRQ); /* NVIC_EnableIRQ in cmsis terms */
+	NVIC_EnableIRQ(RTC_IRQn);
 
 	/** @todo put an assert here on the 512Hz used below */
 }

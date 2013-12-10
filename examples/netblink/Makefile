@@ -43,17 +43,24 @@ OBJS += ${BOARD_OBJS} ${MY_OBJS} ${DRIVER_OBJS} ${NETIF_OBJS} ${LWIP_OBJS}
 CFLAGS += -pedantic -Wall -std=c99
 
 # adaptions to debian gcc
-CFLAGS += -I/usr/arm-none-eabi/include/ -ffreestanding -I/usr/include/newlib/
+CFLAGS += -ffreestanding -I/usr/include/newlib/
 LDFLAGS += -L/usr/arm-none-eabi/lib/ -L/usr/lib/arm-none-eabi/newlib/armv7-m/
 
-CFLAGS += -D${PARTNUMBER} -D${FAMILYNUMBER} -I/usr/arm-none-eabi/include/libopencmsis/
+CFLAGS += -D${PARTNUMBER} -D${FAMILYNUMBER}
 CFLAGS += -Os -g -Wall -Wextra -fno-common -mcpu=cortex-m3 -mthumb -msoft-float
 
 LDFLAGS += -nostartfiles -Wl,--gc-sections -mthumb -msoft-float -mcpu=cortex-m3
+# seems not to be found, excluding it with -nostartfiles and giving it explicitly. must be before -lnosys
+LDFLAGS += /usr/lib/arm-none-eabi/newlib/armv7-m/crt0.o
+# crti.o would provide _init and _fini, but newlib's __libc_init_array calls
+# into it, and they don't seem to generate any kind of return statement
+# (execution wanders off into strings). providing no-op _init and _fini
+# functions in main.
+CFLAGS += -DINIT_FINI_WORKAROUND
+
 LDFLAGS += -lc -lnosys
-LDSCRIPT ?= libopencm3_efm32g880f128.ld
-# gotta ditch that
-LDFLAGS += -L /usr/arm-none-eabi/lib/ -lopencm3_efm32g  -T$(LDSCRIPT)
+
+
 
 # energymicro emlib
 # this is adapt this if you have simplicity studio installed somewhere
@@ -63,8 +70,13 @@ OBJS += em_cmu.o em_gpio.o em_usart.o em_rtc.o em_emu.o system_efm32g.o
 CFLAGS += -I${EMPATH}/emlib/inc/ -I${EMPATH}/Device/EnergyMicro/EFM32G/Include/
 vpath %.c ${EMPATH}/emlib/src/ ${EMPATH}/Device/EnergyMicro/EFM32G/Source/
 
-OBJS += nvic.o
-vpath %.c ${HOME}/git/libopencm3/lib/cm3/
+CFLAGS += -I${EMPATH}/CMSIS/Include/
+OBJS += startup_efm32g.o
+vpath %.S ${EMPATH}/Device/EnergyMicro/EFM32G/Source/GCC/
+
+LDSCRIPT ?= efm32g.ld
+LDFLAGS += -T$(LDSCRIPT) -L ${EMPATH}/Device/EnergyMicro/EFM32G/Source/GCC/
+
 
 CC = arm-none-eabi-gcc
 LD = arm-none-eabi-gcc
@@ -76,6 +88,9 @@ LD = arm-none-eabi-gcc
 ./${BUILDDIR}/%.o: %.c
 	@mkdir -p ./${BUILDDIR}/
 	$(COMPILE.c) $(OUTPUT_OPTION) $<
+./${BUILDDIR}/%.o: %.S
+	@mkdir -p ./${BUILDDIR}/
+	$(COMPILE.S) $(OUTPUT_OPTION) $<
 
 
 BUILDOBJS = $(addprefix ./${BUILDDIR}/,${OBJS})
@@ -90,7 +105,7 @@ CFLAGS += -MD -MP
 ./${BUILDDIR}/mch_main.bin: ./${BUILDDIR}/mch_main
 	objcopy -Obinary $< $@
 
-stlink_upload: mch_main.bin
+stlink_upload: ./${BUILDDIR}/mch_main.bin
 	gdb-multiarch -x ./openocd-gdb.cfg \
 		-ex "monitor halt" \
 		-ex "monitor flash write_image erase $<" \
@@ -99,5 +114,5 @@ stlink_upload: mch_main.bin
 		-ex "disconnect" \
 		-ex "quit"
 
-gdb: build/main.elf
+gdb: ./${BUILDDIR}/mch_main
 	gdb-multiarch -x ./openocd-gdb.cfg $<

@@ -71,3 +71,8 @@ int main(void)
         sys_check_timeouts();
     }
 }
+
+#ifdef INIT_FINI_WORKAROUND
+void _init(void) {}
+void _fini(void) {}
+#endif
