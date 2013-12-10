@@ -47,13 +47,13 @@ CFLAGS += -I/usr/arm-none-eabi/include/ -ffreestanding -I/usr/include/newlib/
 LDFLAGS += -L/usr/arm-none-eabi/lib/ -L/usr/lib/arm-none-eabi/newlib/armv7-m/
 
 CFLAGS += -D${PARTNUMBER} -D${FAMILYNUMBER} -I/usr/arm-none-eabi/include/libopencmsis/
-CFLAGS += -Os -g -Wall -Wextra -fno-common -mcpu=cortex-m3 -mthumb -msoft-float -MD
+CFLAGS += -Os -g -Wall -Wextra -fno-common -mcpu=cortex-m3 -mthumb -msoft-float
 
 LDFLAGS += -nostartfiles -Wl,--gc-sections -mthumb -msoft-float -mcpu=cortex-m3
 LDFLAGS += -lc -lnosys
 LDSCRIPT ?= libopencm3_efm32g880f128.ld
 # gotta ditch that
-LDFLAGS += -L /usr/arm-none-eabi/lib/ -lopencm3_efm32g  -T$(LDSCRIPT) -t
+LDFLAGS += -L /usr/arm-none-eabi/lib/ -lopencm3_efm32g  -T$(LDSCRIPT)
 
 OBJS += em_cmu.o em_gpio.o em_usart.o em_rtc.o em_emu.o system_efm32g.o
 vpath %.c /usr/lib/arm-none-eabi/src/energymicrolib/src/ ${HOME}/git/energymicrolib/Device/EnergyMicro/EFM32G/Source/
@@ -64,10 +64,25 @@ vpath %.c ${HOME}/git/libopencm3/lib/cm3/
 CC = arm-none-eabi-gcc
 LD = arm-none-eabi-gcc
 
-# must be named like one of the source files
-mch_main: ${OBJS}
+# the explicit rule (a copy of the default rule plus "build/") seems to be the
+# easiest way to get make to output to a subdirectory. vpath is required to
+# make the implicit rule happy that links a binary from an object of the same
+# name. using the opportunity to mkdir too.
+./${BUILDDIR}/%.o: %.c
+	@mkdir -p ./${BUILDDIR}/
+	$(COMPILE.c) $(OUTPUT_OPTION) $<
 
-mch_main.bin: mch_main
+
+BUILDOBJS = $(addprefix ./${BUILDDIR}/,${OBJS})
+
+# name does not matter, but needs to be in objects for default rule to apply
+./${BUILDDIR}/mch_main: ${BUILDOBJS}
+
+# enable dependencies
+-include $(BUILDOBJS:%.o=%.d)
+CFLAGS += -MD -MP
+
+./${BUILDDIR}/mch_main.bin: ./${BUILDDIR}/mch_main
 	objcopy -Obinary $< $@
 
 stlink_upload: mch_main.bin
