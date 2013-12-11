@@ -46,21 +46,49 @@ CFLAGS += -I../../lwip
 vpath %.c ../../lwip/netif
 
 
+# use either section (but not both)
+
 # energymicro emlib (required by the board)
 
-# adapt this if you have simplicity studio installed somewhere
-EMPATH = /usr/share/energymicro/studio
+	# adapt this if you have simplicity studio installed somewhere
+	EMPATH = /usr/share/energymicro/studio
+	
+	# hardware configuration -- these constants do the dispatching in em_device.h
+	CFLAGS += -D${PARTNUMBER} -D${FAMILYNUMBER}
+	
+	OBJS += em_cmu.o em_gpio.o em_usart.o em_rtc.o em_emu.o system_efm32g.o
+	CFLAGS += -I${EMPATH}/emlib/inc/ -I${EMPATH}/Device/EnergyMicro/EFM32G/Include/
+	vpath %.c ${EMPATH}/emlib/src/ ${EMPATH}/Device/EnergyMicro/EFM32G/Source/
+	
+	CFLAGS += -I${EMPATH}/CMSIS/Include/
+	OBJS += startup_efm32g.o
+	vpath %.S ${EMPATH}/Device/EnergyMicro/EFM32G/Source/GCC/
+	
+	# linker script from energymicro
+	LDFLAGS += -Tefm32g.ld -L ${EMPATH}/Device/EnergyMicro/EFM32G/Source/GCC/
 
-# hardware configuration -- these constants do the dispatching in em_device.h
-CFLAGS += -D${PARTNUMBER} -D${FAMILYNUMBER}
+# alternative: emlib precompiled with opebcmsis
 
-OBJS += em_cmu.o em_gpio.o em_usart.o em_rtc.o em_emu.o system_efm32g.o
-CFLAGS += -I${EMPATH}/emlib/inc/ -I${EMPATH}/Device/EnergyMicro/EFM32G/Include/
-vpath %.c ${EMPATH}/emlib/src/ ${EMPATH}/Device/EnergyMicro/EFM32G/Source/
+#	# for emlib
+#	CFLAGS += -I/usr/lib/arm-none-eabi/include/
+#	# for libopencm3
+#	CFLAGS += -I/usr/arm-none-eabi/include/
+#	# extra for opencmsis
+#	CFLAGS += -I/usr/arm-none-eabi/include/libopencmsis/
+#
+#	# linker script from libopencm3
+#	LDFLAGS += -Tlibopencm3_efm32g880f128.ld -L/usr/arm-none-eabi/lib/
+#
+#	# have to match what's in the library
+#	CFLAGS += -D${PARTNUMBER} -D${FAMILYNUMBER}
+#	LDLIBS += -lopencm3_efm32g
+#	LDLIBS += -lemlib-efm32g880f128
+#
+#	# the linker script provided here does not need the crt?.o objects, but
+#	# it seems they can be left in place with no ill effect.
+#	#LDFLAGS += -nostartfiles
 
-CFLAGS += -I${EMPATH}/CMSIS/Include/
-OBJS += startup_efm32g.o
-vpath %.S ${EMPATH}/Device/EnergyMicro/EFM32G/Source/GCC/
+# end of alternatives
 
 
 # use newlib as the libc
@@ -93,9 +121,6 @@ CFLAGS += -pedantic -Wall -Wextra -std=gnu99 -fno-common
 # optimizations and debuggability
 CFLAGS += -Os -g
 LDFLAGS += -Wl,--gc-sections
-
-# linker script from energymicro
-LDFLAGS += -Tefm32g.ld -L ${EMPATH}/Device/EnergyMicro/EFM32G/Source/GCC/
 
 
 CC = arm-none-eabi-gcc
