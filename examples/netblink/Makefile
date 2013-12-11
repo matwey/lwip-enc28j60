@@ -52,11 +52,11 @@ CFLAGS += -Os -g -Wall -Wextra -fno-common -mcpu=cortex-m3 -mthumb -msoft-float
 LDFLAGS += -nostartfiles -Wl,--gc-sections -mthumb -msoft-float -mcpu=cortex-m3
 # seems not to be found, excluding it with -nostartfiles and giving it explicitly. must be before -lnosys
 LDFLAGS += /usr/lib/arm-none-eabi/newlib/armv7-m/crt0.o
-# crti.o would provide _init and _fini, but newlib's __libc_init_array calls
-# into it, and they don't seem to generate any kind of return statement
-# (execution wanders off into strings). providing no-op _init and _fini
-# functions in main.
-CFLAGS += -DINIT_FINI_WORKAROUND
+# these provide the _init and _fini functions for newlib's newlib's
+# __libc_init_array calls. things go bad when you only include crti and not
+# crtn. (the functions have callable symbols, but the functions inside the
+# symbols do not have return statemets without crtn.o)
+LDFLAGS += /usr/lib/gcc/arm-none-eabi/4.8.2/armv7-m/crti.o /usr/lib/gcc/arm-none-eabi/4.8.2/armv7-m/crtn.o
 
 LDFLAGS += -lc -lnosys
 
