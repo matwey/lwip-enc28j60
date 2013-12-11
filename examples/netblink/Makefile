@@ -8,12 +8,15 @@
 BOARD = olimex-efm32g880f128-h
 PARTNUMBER = EFM32G880F128
 FAMILYNUMBER = EFM32G
-EACOMMANDER_DIRECTION = out
-
-UPLOAD_MECHANISM = eacommander
 
 BUILDDIR = build
-SOURCEDIR = .
+
+
+##############################################################
+#################### libraries involved ######################
+##############################################################
+
+# enc28j60 board driver and driver
 
 BOARD_OBJS = board.o
 CFLAGS += -I ../../efm32/boards/${BOARD}/
@@ -24,6 +27,9 @@ vpath %.c ../../enc28j60driver ../../efm32/enchw
 CFLAGS += -DENC28J60_USE_PBUF # configure the enc28j60 backend to build functions that involve lwip buffer mgmt
 CFLAGS += -I../../enc28j60driver -I../../efm32/enchw
 
+
+# lwip
+
 # use this with lwip 1.5 development or later
 #LWIP_OBJS = etharp.o mem.o memp.o netif.o pbuf.o raw.o stats.o sys.o tcp.o tcp_in.o tcp_out.o udp.o dhcp.o init.o def.o timers.o dns.o inet_chksum.o err.o icmp.o ip_frag.o ip4_addr.o ip4.o
 # use this with lwip 1.4.1
@@ -32,39 +38,21 @@ LWIP_OBJS = etharp.o mem.o memp.o netif.o pbuf.o raw.o stats.o sys.o tcp.o tcp_i
 CFLAGS += -I./lwip/src/include/ipv4 -I./lwip/src/include/ipv6 -I./lwip/src/include -I.
 vpath %.c lwip/src/netif lwip/src/core lwip/src/api lwip/src/core/ipv4
 
+
+# enc28j60 lwip infrastructure
+
 NETIF_OBJS = mchdrv.o
 CFLAGS += -I../../lwip
 vpath %.c ../../lwip/netif
 
-MY_OBJS = mch_main.o testapp.o
 
-OBJS += ${BOARD_OBJS} ${MY_OBJS} ${DRIVER_OBJS} ${NETIF_OBJS} ${LWIP_OBJS}
+# energymicro emlib (required by the board)
 
-CFLAGS += -pedantic -Wall -std=c99
-
-# adaptions to debian gcc
-CFLAGS += -ffreestanding -I/usr/include/newlib/
-LDFLAGS += -L/usr/arm-none-eabi/lib/ -L/usr/lib/arm-none-eabi/newlib/armv7-m/
-
-CFLAGS += -D${PARTNUMBER} -D${FAMILYNUMBER}
-CFLAGS += -Os -g -Wall -Wextra -fno-common -mcpu=cortex-m3 -mthumb -msoft-float
-
-LDFLAGS += -nostartfiles -Wl,--gc-sections -mthumb -msoft-float -mcpu=cortex-m3
-# seems not to be found, excluding it with -nostartfiles and giving it explicitly. must be before -lnosys
-LDFLAGS += /usr/lib/arm-none-eabi/newlib/armv7-m/crt0.o
-# these provide the _init and _fini functions for newlib's newlib's
-# __libc_init_array calls. things go bad when you only include crti and not
-# crtn. (the functions have callable symbols, but the functions inside the
-# symbols do not have return statemets without crtn.o)
-LDFLAGS += /usr/lib/gcc/arm-none-eabi/4.8.2/armv7-m/crti.o /usr/lib/gcc/arm-none-eabi/4.8.2/armv7-m/crtn.o
-
-LDFLAGS += -lc -lnosys
-
-
-
-# energymicro emlib
-# this is adapt this if you have simplicity studio installed somewhere
+# adapt this if you have simplicity studio installed somewhere
 EMPATH = /usr/share/energymicro/studio
+
+# hardware configuration -- these constants do the dispatching in em_device.h
+CFLAGS += -D${PARTNUMBER} -D${FAMILYNUMBER}
 
 OBJS += em_cmu.o em_gpio.o em_usart.o em_rtc.o em_emu.o system_efm32g.o
 CFLAGS += -I${EMPATH}/emlib/inc/ -I${EMPATH}/Device/EnergyMicro/EFM32G/Include/
@@ -74,8 +62,40 @@ CFLAGS += -I${EMPATH}/CMSIS/Include/
 OBJS += startup_efm32g.o
 vpath %.S ${EMPATH}/Device/EnergyMicro/EFM32G/Source/GCC/
 
-LDSCRIPT ?= efm32g.ld
-LDFLAGS += -T$(LDSCRIPT) -L ${EMPATH}/Device/EnergyMicro/EFM32G/Source/GCC/
+
+# use newlib as the libc
+
+CFLAGS += -I/usr/include/newlib/
+LDFLAGS += -L/usr/lib/arm-none-eabi/newlib/armv7-m/
+LDFLAGS += -B/usr/lib/arm-none-eabi/newlib/armv7-m/
+LDFLAGS += -lc -lnosys
+
+
+# the main application
+
+MY_OBJS = mch_main.o testapp.o
+
+
+##############################################################
+###################### compiler setup ########################
+##############################################################
+
+
+OBJS += ${BOARD_OBJS} ${MY_OBJS} ${DRIVER_OBJS} ${NETIF_OBJS} ${LWIP_OBJS}
+
+# architecture specific cflags
+CFLAGS += -mcpu=cortex-m3 -mthumb -msoft-float
+LDFLAGS += -mthumb -msoft-float -mcpu=cortex-m3
+
+# proper compiler behavior
+CFLAGS += -pedantic -Wall -Wextra -std=gnu99 -fno-common
+
+# optimizations and debuggability
+CFLAGS += -Os -g
+LDFLAGS += -Wl,--gc-sections
+
+# linker script from energymicro
+LDFLAGS += -Tefm32g.ld -L ${EMPATH}/Device/EnergyMicro/EFM32G/Source/GCC/
 
 
 CC = arm-none-eabi-gcc
@@ -85,6 +105,9 @@ LD = arm-none-eabi-gcc
 # easiest way to get make to output to a subdirectory. vpath is required to
 # make the implicit rule happy that links a binary from an object of the same
 # name. using the opportunity to mkdir too.
+# 
+# if you don't want to do this, drop all references to BUILDDIR and things are
+# automagic
 ./${BUILDDIR}/%.o: %.c
 	@mkdir -p ./${BUILDDIR}/
 	$(COMPILE.c) $(OUTPUT_OPTION) $<
@@ -96,16 +119,17 @@ LD = arm-none-eabi-gcc
 BUILDOBJS = $(addprefix ./${BUILDDIR}/,${OBJS})
 
 # name does not matter, but needs to be in objects for default rule to apply
-./${BUILDDIR}/mch_main: ${BUILDOBJS}
+ELFFILE = ./${BUILDDIR}/mch_main
+${ELFFILE}: ${BUILDOBJS}
 
 # enable dependencies
 -include $(BUILDOBJS:%.o=%.d)
 CFLAGS += -MD -MP
 
-./${BUILDDIR}/mch_main.bin: ./${BUILDDIR}/mch_main
+${ELFFILE}.bin: ${ELFFILE}
 	objcopy -Obinary $< $@
 
-stlink_upload: ./${BUILDDIR}/mch_main.bin
+stlink_upload: ${ELFFILE}.bin
 	gdb-multiarch -x ./openocd-gdb.cfg \
 		-ex "monitor halt" \
 		-ex "monitor flash write_image erase $<" \
@@ -114,5 +138,5 @@ stlink_upload: ./${BUILDDIR}/mch_main.bin
 		-ex "disconnect" \
 		-ex "quit"
 
-gdb: ./${BUILDDIR}/mch_main
+gdb: ${ELFFILE}
 	gdb-multiarch -x ./openocd-gdb.cfg $<
