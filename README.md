@@ -72,3 +72,14 @@ library provided by EnergyMicro, and manages transmission of bytes over the
 chips' SPI peripherials. The very pinouts are defined in the `enchw-config.h`
 files, which are provided for particular development boards in `efm32/boards/`,
 along with very simple board drivers that are used in the examples.
+
+ASF backend
+-----------
+
+An implementation of the hardware backend for Atmel SAM devices can be found in
+`asf/enchw`. It utilized Atmel Software Framework (ASF) http://www.atmel.com/tools/avrsoftwareframework.aspx
+which is available under modified 4-clause BSD license. Multiple devices are supported.
+As soon as SPI may be shared between ENC28J60 and other slaves,
+it is for user to allocate and provide pointer to properly initialized `struct spi_module`
+as well as to initialize `struct spi_slave_inst`.
+
