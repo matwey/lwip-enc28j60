@@ -3,7 +3,6 @@
 
 typedef struct {
 	struct spi_module* pmaster;  // pointer to master SPI, can be shared with other SPI slaves
-	// FIXME: we need to lock the pmaster
 	struct spi_slave_inst slave; // slave ENC28J60 SPI device, 
 } enchw_device_t;
 
