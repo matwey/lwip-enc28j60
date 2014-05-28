@@ -40,7 +40,6 @@ int enc_setup_basic(enc_device_t *dev)
 
 	dev->last_used_register = ENC_BANK_INDETERMINATE;
 	dev->rxbufsize = ~0;
-	dev->rdpt = ~0;
 
 	enc_BFS(dev, ENC_ECON2, ENC_ECON2_AUTOINC);
 
@@ -52,14 +51,6 @@ static void set_erxnd(enc_device_t *dev, uint16_t erxnd)
 	if (erxnd != dev->rxbufsize) {
 		dev->rxbufsize = erxnd;
 		enc_WCR16(dev, ENC_ERXNDL, erxnd);
-	}
-}
-
-static void set_erdpt(enc_device_t *dev, uint16_t erdpt)
-{
-	if (erdpt != dev->rdpt) {
-		dev->rdpt = erdpt;
-		enc_WCR16(dev, ENC_ERDPTL, erdpt);
 	}
 }
 
@@ -195,16 +186,13 @@ void enc_BFC(enc_device_t *dev, uint8_t reg, uint8_t data) {
 void enc_RBM(enc_device_t *dev, uint8_t *dest, uint16_t start, uint16_t length)
 {
 	if (start != ENC_READLOCATION_ANY)
-		set_erdpt(dev, start);
+		enc_WCR16(dev, ENC_ERDPTL, start);
 
 	enchw_select(HWDEV);
 	enchw_exchangebyte(HWDEV, 0x3a);
 	while(length--)
 		*(dest++) = enchw_exchangebyte(HWDEV, 0);
 	enchw_unselect(HWDEV);
-
-	/* returning to 0 as ERXST has to be 0 according to errata */
-	dev->rdpt = (dev->rdpt + length) % (dev->rxbufsize);
 }
 
 static void WBM_raw(enc_device_t *dev, uint8_t *src, uint16_t length)

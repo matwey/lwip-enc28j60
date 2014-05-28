@@ -28,8 +28,6 @@ typedef struct {
 	enc_register_t last_used_register;
 	/** Configured receiver buffer size; cached value of of ERXND[H:L] */
 	uint16_t rxbufsize;
-	/** Read pointer; cached value for ERDPT */
-	uint16_t rdpt;
 
 	/** Where to start reading the next received frame */
 	uint16_t next_frame_location;
