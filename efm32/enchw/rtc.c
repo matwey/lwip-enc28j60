@@ -41,6 +41,13 @@ void rtc_setup(void)
 	CMU_ClockEnable(cmuClock_CORELE, true);
 
 	CMU_ClockSelectSet(cmuClock_LFA,cmuSelect_LFRCO); /* using LFRCO instead of LFXO because LFXO won't come on -- possibly hardware fault on demo board */
+	/* if you prefer to run from lfxo, enable this block: */
+	/*
+	EMU->AUXCTRL |= EMU_AUXCTRL_REDLFXOBOOST;
+	CMU_OscillatorEnable(cmuOsc_LFXO, true, true);
+
+	CMU_ClockSelectSet(cmuClock_LFA, cmuSelect_LFXO);
+	*/
 	CMU_ClockDivSet(cmuClock_RTC, cmuClkDiv_64); /* with _64, this gives 2ms ticks */
 	CMU_ClockEnable(cmuClock_RTC, true);
 
