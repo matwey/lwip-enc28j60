@@ -7,6 +7,8 @@
  * An implementation of the interface described in `rtc.h` for EMLIB (Energy
  * Micro EFM32) devices, which does not need a high-priorized interrupt handler
  * routine and can be queried inside interrupts.
+ *
+ * This implementation uses the RTC component (24bit clock).
  */
 
 #include "rtc.h"
@@ -23,6 +25,8 @@ const RTC_Init_TypeDef my_rtc_settings = {
 static volatile uint8_t high32; /**< The overflowing part of the 24bit RTC register */
 static volatile uint32_t high64; /**< The overflowing part of the 32bit value composed of high32 and the register */
 
+/** If using this as an interrupt is not an option, it can just as well be
+ * called in another fashion as rtc_maintenance. */
 //void rtc_maintenance(void)
 void RTC_IRQHandler(void)
 {
