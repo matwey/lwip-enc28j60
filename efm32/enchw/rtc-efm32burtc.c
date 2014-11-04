@@ -31,33 +31,111 @@
  * * Use the BURTC's COMP0 interrupt flag instead of the overflow indicator.
  *   COMP0 would, at runtime, be repeatedly set to be less than the count, and
  *   only when the comparator interrupt flag is treated as an overflow.
+ *
+ * This implementation requires access to RMU->RSTCAUSE, be careful not to
+ * initialize it after clearing that.
  */
 
 #include "rtc.h"
+#include <em_emu.h>
 #include <em_burtc.h>
 #include <em_cmu.h>
 #include <em_chip.h>
+#include <em_rmu.h>
 
 static volatile uint32_t high64; /**< The overflowing part of the 32bit value composed of high32 and the register */
 
 /** If using this as an interrupt is not an option, it can just as well be
  * called in another fashion as rtc_maintenance. */
 //void rtc_maintenance(void)
-void RTC_IRQHandler(void)
+void BURTC_IRQHandler(void)
 {
-	if (!(RTC->IF & RTC_IF_OF)) return;
-
-        __asm__("CPSID I\n"); /* should be __disable_irq or cm_disable_interrupts */
-	if (high32 == 0xff)
-		high64 += 1;
-	high32 += 1;
-	RTC->IFC = RTC_IF_OF;
-        __asm__("CPSIE I\n"); /* should be __enable_irq  or cm_enable_interrupts */
 }
 
 void rtc_setup(void)
 {
-	/** @TODO implement */
+	uint32_t startup_counter;
+
+	CMU_ClockEnable(cmuClock_CORELE, true);
+
+	startup_counter = BURTC_CounterGet();
+
+	EMU_EM4Init_TypeDef em4Init = {
+		.lockConfig = true,
+		.osc = emuEM4Osc_LFXO,
+		.buRtcWakeup = false,
+		.vreg = true,
+	};
+	EMU_BUPDInit_TypeDef bupdInit = {
+		.probe = emuProbe_Disable,
+		.bodCal = false,
+		.statusPinEnable = false,
+		.resistor = emuRes_Res3,
+		.voutStrong = false,
+		.voutMed = false,
+		.voutWeak = false,
+		.inactivePower = emuPower_MainBU,
+		.activePower = emuPower_None,
+		.enable = true,
+	};
+
+	/* this is a better indicator than querying the resetcause as suggested
+	 * in AN0041 and the burtc example, for their check fails to detect an
+	 * "unplug, press reset, plug in" situation, where their burtcSetup is
+	 * never called after a reset. RSTEN on the other hand has shown to be
+	 * pretty reliable.
+	 *
+	 * see also
+	 * http://community.silabs.com/t5/32-bit-MCU/Retention-registers-of-BURTC-loose-data/td-p/110231
+	 * .
+	 */
+	bool bu_is_ready = (BURTC->CTRL & BURTC_CTRL_RSTEN) == 0;
+
+	/* do i really have to do this? LFXORDY is false when coming out of backup mode clearly, but it ticked all the time! */
+	CMU_OscillatorEnable(cmuOsc_LFXO, true, true);
+
+	if (bu_is_ready) {
+		log_message("there might be a state\n");
+		/* Check if retention registers were being written to when backup mode was entered */
+		if (BURTC->STATUS & BURTC_STATUS_RAMWERR) {
+			log_message("written to while entering mode, still using the configured clock (it's just not a valid time)\n");
+		}
+		if (BURTC->STATUS & BURTC_STATUS_BUMODETS) {
+			log_message("Last timestamp present: %d. Continue counting from %d (now %d)\n", BURTC_TimestampGet(), startup_counter, BURTC_CounterGet());
+		} else {
+			log_message("No last timestmap. Continue counting from %d (now %d)\n", startup_counter, BURTC_CounterGet());
+		}
+		BURTC_StatusClear();
+	} else {
+		log_message("it's a fresh boot\n");
+
+		EMU_EM4Lock(false);
+		EMU_BUPDInit(&bupdInit);
+		EMU_BUReady();
+		/* wake up bu domain */
+		RMU_ResetControl(rmuResetBU, false);
+
+		EMU_EM4Init(&em4Init);
+
+		BURTC_Init_TypeDef burtcInit = {
+			.enable = true,
+			.mode = burtcModeEM4,
+			.debugRun = false,
+			.clkSel = burtcClkSelLFXO,
+			.clkDiv = 1,
+			.lowPowerComp = 0,
+			.timeStamp = true,
+			.compare0Top = false,
+			.lowPowerMode = burtcLPDisable,
+		};
+
+		BURTC_Init(&burtcInit);
+		log_message("configured\n");
+
+		BURTC->RET[0].REG = 0x1000;
+	}
+
+	log_message("register value %x\n", BURTC->RET[0].REG++);
 }
 
 uint32_t rtc_get24(void)
@@ -83,6 +161,11 @@ uint32_t rtc_get_ms(void)
 uint64_t rtc_get_ms64(void)
 {
 	/** @TODO implement */
+}
+
+uint32_t rtc_get_ticks_per_second(void)
+{
+	return 512;
 }
 
 /** @} @} */
