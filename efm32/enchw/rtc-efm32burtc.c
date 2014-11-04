@@ -45,39 +45,72 @@
 
 static volatile uint32_t high64; /**< The overflowing part of the 32bit value composed of high32 and the register */
 
+/** @addtogroup rfc-efm32burtc-impl-regs Retention registers
+ *
+ * This is a simplistic approach to checksummed doublebuffered registers to
+ * avoid issues when writing during power loss.
+ *
+ * The 128 registers available are mapped to 32 index values. For each index,
+ * there are a primary and a secondary buffer, each with a value field and a
+ * checksum (which is ^value).
+ *
+ * @{ */
+
+#define REGVAL(index, offset) BURTC->RET[index * 4 + offset].REG
+
+static void store_reg(uint8_t index, uint32_t value)
+{
+	if (index > 32) return;
+
+	if (!~(REGVAL(index, 0) ^ REGVAL(index, 1))) {
+		/* write to second, destroy first */
+		REGVAL(index, 2) = value;
+		REGVAL(index, 3) = ~value;
+		REGVAL(index, 0) = 0;
+		REGVAL(index, 1) = 0;
+	} else {
+		REGVAL(index, 0) = value;
+		REGVAL(index, 1) = ~value;
+	}
+}
+
+/** Read the index value to @p *value, return true if reading was successful. */
+static bool retrieve_reg(uint8_t index, uint32_t *value)
+{
+	if (index > 32) return false;
+
+	if (!~(REGVAL(index, 0) ^ REGVAL(index, 1))) {
+		*value = REGVAL(index, 0);
+		return true;
+	}
+	if (!~(REGVAL(index, 2) ^ REGVAL(index, 3))) {
+		*value = REGVAL(index, 2);
+		return true;
+	}
+	return false;
+}
+
+/** @} */
+
 /** If using this as an interrupt is not an option, it can just as well be
  * called in another fashion as rtc_maintenance. */
 //void rtc_maintenance(void)
 void BURTC_IRQHandler(void)
 {
+	if (!(BURTC->IF & BURTC_IF_OF)) return;
+
+        __asm__("CPSID I\n"); /* should be __disable_irq or cm_disable_interrupts */
+	BURTC->IFC = BURTC_IF_OF;
+
+	high64 += 1;
+	store_reg(0, high64);
+
+        __asm__("CPSIE I\n"); /* should be __enable_irq  or cm_enable_interrupts */
 }
 
 void rtc_setup(void)
 {
-	uint32_t startup_counter;
-
 	CMU_ClockEnable(cmuClock_CORELE, true);
-
-	startup_counter = BURTC_CounterGet();
-
-	EMU_EM4Init_TypeDef em4Init = {
-		.lockConfig = true,
-		.osc = emuEM4Osc_LFXO,
-		.buRtcWakeup = false,
-		.vreg = true,
-	};
-	EMU_BUPDInit_TypeDef bupdInit = {
-		.probe = emuProbe_Disable,
-		.bodCal = false,
-		.statusPinEnable = false,
-		.resistor = emuRes_Res3,
-		.voutStrong = false,
-		.voutMed = false,
-		.voutWeak = false,
-		.inactivePower = emuPower_MainBU,
-		.activePower = emuPower_None,
-		.enable = true,
-	};
 
 	/* this is a better indicator than querying the resetcause as suggested
 	 * in AN0041 and the burtc example, for their check fails to detect an
@@ -85,29 +118,69 @@ void rtc_setup(void)
 	 * never called after a reset. RSTEN on the other hand has shown to be
 	 * pretty reliable.
 	 *
-	 * see also
+	 * see also:
 	 * http://community.silabs.com/t5/32-bit-MCU/Retention-registers-of-BURTC-loose-data/td-p/110231
-	 * .
 	 */
 	bool bu_is_ready = (BURTC->CTRL & BURTC_CTRL_RSTEN) == 0;
 
-	/* do i really have to do this? LFXORDY is false when coming out of backup mode clearly, but it ticked all the time! */
-	CMU_OscillatorEnable(cmuOsc_LFXO, true, true);
+	bool timestamp_is_usable = false;
 
 	if (bu_is_ready) {
-		log_message("there might be a state\n");
+		/* do i really have to do this? LFXORDY is false when coming
+		 * out of backup mode clearly, but it ticked all the time!
+		 *
+		 * see also:
+		 * http://community.silabs.com/t5/32-bit-MCU/resuming-on-LFXO-after-wakeup-from-BUPD-with-BURTC-running/m-p/133720
+		 * */
+		CMU_OscillatorEnable(cmuOsc_LFXO, true, true);
+
+		timestamp_is_usable = true;
+
+		if (BURTC->IF & BURTC_IF_OF) {
+			timestamp_is_usable = false;
+		}
+
+		if (timestamp_is_usable && !retrieve_reg(0, &high64)) {
+			timestamp_is_usable = false;
+		}
+
 		/* Check if retention registers were being written to when backup mode was entered */
 		if (BURTC->STATUS & BURTC_STATUS_RAMWERR) {
-			log_message("written to while entering mode, still using the configured clock (it's just not a valid time)\n");
+			/* so what. we'll probably always ignore that, for
+			 * writers will prefer to do their own
+			 * doublebuffering/checksumming than fail just because
+			 * they had bad timing */
 		}
 		if (BURTC->STATUS & BURTC_STATUS_BUMODETS) {
-			log_message("Last timestamp present: %d. Continue counting from %d (now %d)\n", BURTC_TimestampGet(), startup_counter, BURTC_CounterGet());
+			/* we might want to pass BURTC_TimestampGet() on --
+			 * otoh, that can be queried any time later too, just
+			 * ->STATUS will be gone. */
 		} else {
-			log_message("No last timestmap. Continue counting from %d (now %d)\n", startup_counter, BURTC_CounterGet());
+			/* everything is fine */
 		}
+
 		BURTC_StatusClear();
 	} else {
-		log_message("it's a fresh boot\n");
+		CMU_OscillatorEnable(cmuOsc_LFXO, true, true);
+
+		EMU_EM4Init_TypeDef em4Init = {
+			.lockConfig = true,
+			.osc = emuEM4Osc_LFXO,
+			.buRtcWakeup = false,
+			.vreg = true,
+		};
+		EMU_BUPDInit_TypeDef bupdInit = {
+			.probe = emuProbe_Disable,
+			.bodCal = false,
+			.statusPinEnable = false,
+			.resistor = emuRes_Res3,
+			.voutStrong = false,
+			.voutMed = false,
+			.voutWeak = false,
+			.inactivePower = emuPower_MainBU,
+			.activePower = emuPower_None,
+			.enable = true,
+		};
 
 		EMU_EM4Lock(false);
 		EMU_BUPDInit(&bupdInit);
@@ -122,7 +195,7 @@ void rtc_setup(void)
 			.mode = burtcModeEM4,
 			.debugRun = false,
 			.clkSel = burtcClkSelLFXO,
-			.clkDiv = 1,
+			.clkDiv = 64,
 			.lowPowerComp = 0,
 			.timeStamp = true,
 			.compare0Top = false,
@@ -130,37 +203,74 @@ void rtc_setup(void)
 		};
 
 		BURTC_Init(&burtcInit);
-		log_message("configured\n");
-
-		BURTC->RET[0].REG = 0x1000;
 	}
 
-	log_message("register value %x\n", BURTC->RET[0].REG++);
+	if (!timestamp_is_usable)
+	{
+		/* better not look for patterns where none are; also, if our
+		 * timestamp is not usable any more, everything else is
+		 * potentially outdated too.
+		 *
+		 * (admittedly, this is the very specific opinion on usable
+		 * data of someone who uses this for keeping rtc offsts, but
+		 * hey, this is a clock module after all.) */
+		for (uint8_t i = 0; i < 128; ++i)
+		{
+			BURTC->RET[i].REG = 0;
+		}
+
+		high64 = 0;
+		store_reg(0, high64);
+
+		/* be careful not to clear this early -- if we wake up to an
+		 * overflow condition, the above invalidation must have
+		 * occurred before this gets cleared, or we might wake up
+		 * briefly to clear this and later have a wrong time. */
+		BURTC->IFC = BURTC_IF_OF;
+	}
+
+	BURTC_IntEnable(RTC_IF_OF);
+	NVIC_EnableIRQ(BURTC_IRQn);
 }
 
 uint32_t rtc_get24(void)
 {
-	/** @TODO provide simple fallabck*/
+	return BURTC_CounterGet() & 0xffffff;
 }
 
 uint32_t rtc_get32(void)
 {
-	/** @TODO implement */
+	return BURTC_CounterGet();
 }
 
 uint64_t rtc_get64(void)
 {
-	/** @TODO implement */
+	/** see rtc-efm32rtc.c's rtc_get32 for a more readable version */
+	uint64_t my_high64;
+	uint32_t overflew;
+	uint32_t first, second;
+
+        __asm__("CPSID I\n"); /* should be __disable_irq or cm_disable_interrupts */
+	first = BURTC_CounterGet();
+	my_high64 = high64;
+	overflew = BURTC->IF & BURTC_IF_OF;
+        __asm__("CPSIE I\n"); /* should be __enable_irq  or cm_enable_interrupts */
+
+	second = BURTC_CounterGet();
+
+	return ((my_high64 + (overflew || (second < first)))<< 32) | second;
 }
 
 uint32_t rtc_get_ms(void)
 {
-	/** @TODO implement */
+	uint64_t bigproduct = rtc_get32() * (uint64_t)1000;
+	return bigproduct / rtc_get_ticks_per_second();
 }
 
 uint64_t rtc_get_ms64(void)
 {
-	/** @TODO implement */
+	/** FIXME this is copied from etc-efm32rtc.c, should use some kind of common fallback mechanism */
+	return rtc_get64() * 1000 / rtc_get_ticks_per_second();
 }
 
 uint32_t rtc_get_ticks_per_second(void)
