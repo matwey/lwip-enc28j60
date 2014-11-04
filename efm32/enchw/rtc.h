@@ -44,6 +44,15 @@ void rtc_setup(void);
  */
 void rtc_maintenance(void);
 
+/** Get the number of ticks that expier per second.
+ *
+ * On most implementations, this will return a build-time constants that can be
+ * folded by LTO.
+ *
+ * (Note to self: try again with arm-none-eabi-gcc. It worked with GCC 4.9 on
+ * AMD64, but was not observed yet with arm-none-eabi-gcc 4.8.) */
+uint32_t rtc_get_ticks_per_second(void);
+
 /** Get the number of "ticks" expired since startup, module 2^24. This is very
  * efficient on the Energy Micro implementation, but unsuitable for everything
  * that needs full 32 bit. */
