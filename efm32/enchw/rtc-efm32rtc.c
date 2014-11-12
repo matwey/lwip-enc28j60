@@ -8,7 +8,7 @@
  * Micro EFM32) devices, which does not need a high-priorized interrupt handler
  * routine and can be queried inside interrupts.
  *
- * This implementation uses the RTC component (24bit clock).
+ * This implementation uses the RTC component (24bit clock) at 512Hz.
  */
 
 #include "rtc.h"
@@ -63,8 +63,6 @@ void rtc_setup(void)
 	RTC_IntEnable(RTC_IF_OF);
 
 	NVIC_EnableIRQ(RTC_IRQn);
-
-	/** @todo put an assert here on the 512Hz used below */
 }
 
 uint32_t rtc_get24(void)
@@ -150,13 +148,17 @@ uint32_t rtc_get_ms(void)
 	 * anyway, this routine is more for display purposes than for real
 	 * calculations. */
 	uint64_t bigproduct = RTC_CounterGet() * (uint64_t)1000;
-	return bigproduct / CMU_ClockFreqGet(cmuClock_RTC);
+	return bigproduct / rtc_get_ticks_per_second();
 }
 
 uint64_t rtc_get_ms64(void)
 {
-	/* this assumes the 512Hz ticks configured above */
-	return rtc_get64() * 1000 / 512;
+	return rtc_get64() * 1000 / rtc_get_ticks_per_second();
+}
+
+uint32_t rtc_get_ticks_per_second(void)
+{
+	return 512;
 }
 
 /** @} @} */
