@@ -50,44 +50,50 @@ static volatile uint32_t high64; /**< The overflowing part of the 32bit value co
  * This is a simplistic approach to checksummed doublebuffered registers to
  * avoid issues when writing during power loss.
  *
- * The 128 registers available are mapped to 32 index values. For each index,
- * there are a primary and a secondary buffer, each with a value field and a
- * checksum (which is ^value).
+ * The 128 registers can be accessed by offset and length; for each offset
+ * used, (length + 1) * 2 bytes are used in two groups (a primary and a
+ * secondary), each with a primitive checksum.
  *
  * @{ */
 
-#define REGVAL(index, offset) BURTC->RET[index * 4 + offset].REG
+#define REG(index) BURTC->RET[index].REG
 
-static void store_reg(uint8_t index, uint32_t value)
+static uint32_t regs_checksum(uint8_t n, uint32_t *data)
 {
-	if (index > 32) return;
-
-	if (!~(REGVAL(index, 0) ^ REGVAL(index, 1))) {
-		/* write to second, destroy first */
-		REGVAL(index, 2) = value;
-		REGVAL(index, 3) = ~value;
-		REGVAL(index, 0) = 0;
-		REGVAL(index, 1) = 0;
-	} else {
-		REGVAL(index, 0) = value;
-		REGVAL(index, 1) = ~value;
-	}
+	uint32_t result = 0;
+	while (n--) result ^= *(data++);
+	return ~result; /* negate to avoid empty memory being valid */
 }
 
-/** Read the index value to @p *value, return true if reading was successful. */
-static bool retrieve_reg(uint8_t index, uint32_t *value)
+static bool regs_valid(uint8_t index, uint8_t n)
 {
-	if (index > 32) return false;
+	return regs_checksum(n, &(REG(index))) == REG(index + n);
+}
 
-	if (!~(REGVAL(index, 0) ^ REGVAL(index, 1))) {
-		*value = REGVAL(index, 0);
-		return true;
+void rtc_regs_store(uint8_t index, uint8_t n, uint32_t *value)
+{
+	uint32_t *writecursor;
+	if (regs_valid(index, n)) {
+		writecursor = &(REG(index + n + 1));
+	} else {
+		writecursor = &(REG(index));
 	}
-	if (!~(REGVAL(index, 2) ^ REGVAL(index, 3))) {
-		*value = REGVAL(index, 2);
-		return true;
+	uint32_t checksum = regs_checksum(n, value);
+	while (n--) *(writecursor++) = *(value++);
+	*writecursor = checksum;
+}
+
+bool rtc_regs_retrieve(uint8_t index, uint8_t n, uint32_t *value)
+{
+	uint32_t *readcursor = 0;
+	if (regs_valid(index, n)) {
+		readcursor = &(REG(index));
+	} else if (regs_valid(index + n + 1, n)) {
+		readcursor = &(REG(index + n + 1));
 	}
-	return false;
+	if (readcursor == 0) return false;
+	while (n--) *(value++) = *(readcursor++);
+	return true;
 }
 
 /** @} */
@@ -103,7 +109,7 @@ void BURTC_IRQHandler(void)
 	BURTC->IFC = BURTC_IF_OF;
 
 	high64 += 1;
-	store_reg(0, high64);
+	rtc_regs_store(0, 1, &high64);
 
         __asm__("CPSIE I\n"); /* should be __enable_irq  or cm_enable_interrupts */
 }
@@ -140,7 +146,7 @@ void rtc_setup(void)
 			timestamp_is_usable = false;
 		}
 
-		if (timestamp_is_usable && !retrieve_reg(0, &high64)) {
+		if (timestamp_is_usable && !rtc_regs_retrieve(0, 1, &high64)) {
 			timestamp_is_usable = false;
 		}
 
@@ -220,7 +226,7 @@ void rtc_setup(void)
 		}
 
 		high64 = 0;
-		store_reg(0, high64);
+		rtc_regs_store(0, 1, &high64);
 
 		/* be careful not to clear this early -- if we wake up to an
 		 * overflow condition, the above invalidation must have
