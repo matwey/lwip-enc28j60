@@ -33,6 +33,7 @@
  * */
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /** Call this once and early to configure the real time clock. Take care that
  * this might mess with your timing hardware depending on implementation. */
@@ -43,6 +44,15 @@ void rtc_setup(void);
  * this and do not require calling it; anyway, it never does any harm.
  */
 void rtc_maintenance(void);
+
+/** Get the number of ticks that expier per second.
+ *
+ * On most implementations, this will return a build-time constants that can be
+ * folded by LTO.
+ *
+ * (Note to self: try again with arm-none-eabi-gcc. It worked with GCC 4.9 on
+ * AMD64, but was not observed yet with arm-none-eabi-gcc 4.8.) */
+uint32_t rtc_get_ticks_per_second(void);
 
 /** Get the number of "ticks" expired since startup, module 2^24. This is very
  * efficient on the Energy Micro implementation, but unsuitable for everything
@@ -59,5 +69,11 @@ uint64_t rtc_get64(void);
 
 /** Get the number of ms expired since the start of the system. */
 uint64_t rtc_get_ms64(void)/* __attribute__((optimize("O3")))*/;
+
+/** This is currently a pretty raw API for using the EFM32 Backup RTC data
+ * retention registers. @{ */
+void rtc_regs_store(uint8_t index, uint8_t n, uint32_t *value);
+bool rtc_regs_retrieve(uint8_t index, uint8_t n, uint32_t *value);
+/** @} */
 
 /** @} */

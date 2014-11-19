@@ -7,6 +7,8 @@
  * An implementation of the interface described in `rtc.h` for EMLIB (Energy
  * Micro EFM32) devices, which does not need a high-priorized interrupt handler
  * routine and can be queried inside interrupts.
+ *
+ * This implementation uses the RTC component (24bit clock) at 512Hz.
  */
 
 #include "rtc.h"
@@ -23,6 +25,8 @@ const RTC_Init_TypeDef my_rtc_settings = {
 static volatile uint8_t high32; /**< The overflowing part of the 24bit RTC register */
 static volatile uint32_t high64; /**< The overflowing part of the 32bit value composed of high32 and the register */
 
+/** If using this as an interrupt is not an option, it can just as well be
+ * called in another fashion as rtc_maintenance. */
 //void rtc_maintenance(void)
 void RTC_IRQHandler(void)
 {
@@ -41,6 +45,13 @@ void rtc_setup(void)
 	CMU_ClockEnable(cmuClock_CORELE, true);
 
 	CMU_ClockSelectSet(cmuClock_LFA,cmuSelect_LFRCO); /* using LFRCO instead of LFXO because LFXO won't come on -- possibly hardware fault on demo board */
+	/* if you prefer to run from lfxo, enable this block: */
+	/*
+	EMU->AUXCTRL |= EMU_AUXCTRL_REDLFXOBOOST;
+	CMU_OscillatorEnable(cmuOsc_LFXO, true, true);
+
+	CMU_ClockSelectSet(cmuClock_LFA, cmuSelect_LFXO);
+	*/
 	CMU_ClockDivSet(cmuClock_RTC, cmuClkDiv_64); /* with _64, this gives 2ms ticks */
 	CMU_ClockEnable(cmuClock_RTC, true);
 
@@ -52,8 +63,6 @@ void rtc_setup(void)
 	RTC_IntEnable(RTC_IF_OF);
 
 	NVIC_EnableIRQ(RTC_IRQn);
-
-	/** @todo put an assert here on the 512Hz used below */
 }
 
 uint32_t rtc_get24(void)
@@ -139,13 +148,17 @@ uint32_t rtc_get_ms(void)
 	 * anyway, this routine is more for display purposes than for real
 	 * calculations. */
 	uint64_t bigproduct = RTC_CounterGet() * (uint64_t)1000;
-	return bigproduct / CMU_ClockFreqGet(cmuClock_RTC);
+	return bigproduct / rtc_get_ticks_per_second();
 }
 
 uint64_t rtc_get_ms64(void)
 {
-	/* this assumes the 512Hz ticks configured above */
-	return rtc_get64() * 1000 / 512;
+	return rtc_get64() * 1000 / rtc_get_ticks_per_second();
+}
+
+uint32_t rtc_get_ticks_per_second(void)
+{
+	return 512;
 }
 
 /** @} @} */

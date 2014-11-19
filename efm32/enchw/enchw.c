@@ -29,7 +29,11 @@ void enchw_setup(enchw_device_t __attribute__((unused)) *dev)
 	CMU_ClockEnable(cmuClock_GPIO, true);
 	CMU_ClockEnable(USART_CLOCK, true);
 
-	/* just an experiment: use *fast* clock */
+	/* if you prefer to run from hfxo, enable this block instead of the following line */
+	/*
+	CMU_OscillatorEnable(cmuOsc_HFXO, true, true);
+	CMU_ClockSelectSet(cmuClock_HF, cmuSelect_HFXO);
+	*/
 	CMU_HFRCOBandSet(cmuHFRCOBand_28MHz);
 
 	/* ss is active low */

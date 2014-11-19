@@ -1,3 +1,5 @@
+#include <swodebug.h>
+
 #include <lwip/inet.h>
 #include <lwip/tcp.h>
 #include <lwip/netif.h>
@@ -52,12 +54,16 @@ void mch_net_poll(void)
 
 uint32_t sys_now(void)
 {
+	LWIP_ASSERT("Unexpected RTC tick interval", rtc_get_ticks_per_second() == 512);
 	/* assuming the 512Hz implemenetation of the provided rtc, and that 2.4% error are ok for lwip's sys_now */
 	return rtc_get32() * 2;
 }
 
 int main(void)
 {
+    setupSWOForPrint();
+    setupSWO();
+
     rtc_setup();
 
     board_setup();
@@ -69,5 +75,6 @@ int main(void)
     while (1) {
         mch_net_poll();
         sys_check_timeouts();
+	SWOPrint('x');
     }
 }
