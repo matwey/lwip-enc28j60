@@ -1,5 +1,3 @@
-#include <swodebug.h>
-
 #include <lwip/inet.h>
 #include <lwip/tcp.h>
 #include <lwip/netif.h>
@@ -61,9 +59,6 @@ uint32_t sys_now(void)
 
 int main(void)
 {
-    setupSWOForPrint();
-    setupSWO();
-
     rtc_setup();
 
     board_setup();
@@ -75,6 +70,5 @@ int main(void)
     while (1) {
         mch_net_poll();
         sys_check_timeouts();
-	SWOPrint('x');
     }
 }
