@@ -155,7 +155,7 @@ ${ELFFILE}.bin: ${ELFFILE}
 	objcopy -Obinary $< $@
 
 stlink_upload: ${ELFFILE}.bin
-	gdb-multiarch -x ./openocd-gdb.cfg \
+	arm-none-eabi-gdb -x ./openocd-gdb.cfg \
 		-ex "monitor halt" \
 		-ex "monitor flash write_image erase $<" \
 		-ex "monitor verify_image $<" \
@@ -164,4 +164,4 @@ stlink_upload: ${ELFFILE}.bin
 		-ex "quit"
 
 gdb: ${ELFFILE}
-	gdb-multiarch -x ./openocd-gdb.cfg $<
+	arm-none-eabi-gdb -x ./openocd-gdb.cfg $<
