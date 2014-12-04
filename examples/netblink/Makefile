@@ -152,7 +152,7 @@ ${ELFFILE}: ${BUILDOBJS}
 CFLAGS += -MD -MP
 
 ${ELFFILE}.bin: ${ELFFILE}
-	objcopy -Obinary $< $@
+	arm-none-eabi-objcopy -Obinary $< $@
 
 stlink_upload: ${ELFFILE}.bin
 	arm-none-eabi-gdb -x ./openocd-gdb.cfg \

@@ -21,6 +21,7 @@ Quick start
 * Wire everything up the only way the connectors fit
 * Get `openocd` (eg. from Debian, version 0.8.0-131-gbd0409a-0~exp1 or later[1])
 * Get an `arm-none-eabi-gcc` (eg. from the Debian package `gcc-arm-none-eabi`)
+  and `arm-none-eabi-objcopy` (from `binutils-arm-none-eabi`)
 * Get the EFM32 emlib and CMSIS sources (FIXME: that could need some more details)
 * Fetch the lwIP library and build the example code
 
