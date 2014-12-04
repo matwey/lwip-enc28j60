@@ -17,19 +17,26 @@ Quick start
 * Get a ENC28J60 chip with UEXT connector (MOD-ENC28J60 from Olimex)
 * Get a Gecko chip with UEXT connector (EM-32G880F128-H from Olimex) with a
   power supply (the programmer only measures and does not power)
-* Get an SWD programmer (any of the EnergyMicro starter kits)
+* Get an SWD programmer (ST-Link/V2)
 * Wire everything up the only way the connectors fit
+* Get `openocd` (eg. from Debian, version 0.8.0-131-gbd0409a-0~exp1 or later[1])
 * Get an `arm-none-eabi-gcc` (eg. from the Debian package `gcc-arm-none-eabi`)
-* Get the EFM32 toolchain set up (FIXME: that could need some more details)
+* Get the EFM32 emlib and CMSIS sources (FIXME: that could need some more details)
 * Fetch the lwIP library and build the example code
 
         cd examples/netblink/
         git clone git://git.savannah.nongnu.org/lwip.git -b DEVEL-1_4_1
         make
 
+* Start `openocd`:
+
+        openocd -f openocd.cfg
+
+  Leave this running and continue in another terminal.
+
 * Upload the program:
 
-        make upload
+        make stlink_upload
 
 * Configure your Ethernet interface as 192.168.0.1/24
 * Test everything:
@@ -37,6 +44,8 @@ Quick start
         socat udp:192.168.0.2:1234  -
 
 * Enjoy that the LED blinks every time you send a line.
+
+[1] needs to include http://openocd.zylin.com/#/c/1664
 
 ENC28J60 driver
 ---------------
