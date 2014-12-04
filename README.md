@@ -15,7 +15,8 @@ Quick start
 -----------
 
 * Get a ENC28J60 chip with UEXT connector (MOD-ENC28J60 from Olimex)
-* Get a Gecko chip with UEXT connector (EM-32G880F128-H from Olimex)
+* Get a Gecko chip with UEXT connector (EM-32G880F128-H from Olimex) with a
+  power supply (the programmer only measures and does not power)
 * Get an SWD programmer (any of the EnergyMicro starter kits)
 * Wire everything up the only way the connectors fit
 * Get an `arm-none-eabi-gcc` (eg. from the Debian package `gcc-arm-none-eabi`)
