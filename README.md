@@ -22,18 +22,18 @@ Quick start
 * Get the EFM32 toolchain set up (FIXME: that could need some more details)
 * Fetch the lwIP library and build the example code
 
-      cd examples/netblink/
-      git clone git://git.savannah.nongnu.org/lwip.git -b DEVEL-1_4_1
-      make
+        cd examples/netblink/
+        git clone git://git.savannah.nongnu.org/lwip.git -b DEVEL-1_4_1
+        make
 
 * Upload the program:
 
-      make upload
+        make upload
 
 * Configure your Ethernet interface as 192.168.0.1/24
 * Test everything:
 
-      socat udp:192.168.0.2:1234  -
+        socat udp:192.168.0.2:1234  -
 
 * Enjoy that the LED blinks every time you send a line.
 
