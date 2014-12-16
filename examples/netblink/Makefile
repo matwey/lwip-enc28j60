@@ -151,6 +151,8 @@ ${ELFFILE}: ${BUILDOBJS}
 -include $(BUILDOBJS:%.o=%.d)
 CFLAGS += -MD -MP
 
+all: $(ELFFILE).bin
+
 ${ELFFILE}.bin: ${ELFFILE}
 	arm-none-eabi-objcopy -Obinary $< $@
 
