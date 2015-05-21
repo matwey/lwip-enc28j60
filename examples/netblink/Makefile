@@ -119,7 +119,7 @@ LDFLAGS += -mthumb -msoft-float -mcpu=cortex-m3
 CFLAGS += -pedantic -Wall -Wextra -std=gnu99 -fno-common
 
 # optimizations and debuggability
-CFLAGS += -Os -g
+CFLAGS += -Os -g3
 LDFLAGS += -Wl,--gc-sections
 
 
