@@ -163,5 +163,13 @@ stlink_upload: ${ELFFILE}.bin
 		-ex "disconnect" \
 		-ex "quit"
 
+stlink_readswo:
+	arm-none-eabi-gdb -x ./openocd-gdb.cfg \
+		-ex "monitor efm32.cpu tpiu config internal /tmp/readswo-in uart off 14000000" \
+		-ex "monitor itm ports off" \
+		-ex "monitor itm port 0 on" \
+		-ex "disconnect" \
+		-ex "quit"
+
 gdb: ${ELFFILE}
 	arm-none-eabi-gdb -x ./openocd-gdb.cfg $<
