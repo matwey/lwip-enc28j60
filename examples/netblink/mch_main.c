@@ -76,6 +76,5 @@ int main(void)
     while (1) {
         mch_net_poll();
         sys_check_timeouts();
-	log_message("main loop run\n");
     }
 }

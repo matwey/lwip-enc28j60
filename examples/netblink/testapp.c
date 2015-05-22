@@ -45,7 +45,7 @@ recv(void __attribute__((unused)) *arg, struct udp_pcb *pcb, struct pbuf *p, ip_
 	sys_untimeout(led2_off_timeout, NULL);
 	sys_timeout(2000, led2_off_timeout, NULL);
 
-	log_message("Package handled successfully.");
+	log_message("Package handled successfully.\n");
 }
 
 void testapp_init(void)
