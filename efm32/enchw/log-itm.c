@@ -1,4 +1,10 @@
 #include "log-itm.h"
+#include "log.h"
+
+#include <stdio.h>
+
+#include <em_cmu.h>
+#include <core_cm3.h>
 
 static char buffer[LOGSIZE];
 
@@ -21,7 +27,7 @@ static void logitm_disable(void)
 	GPIO->ROUTE &= ~GPIO_ROUTE_SWOPEN;
 }
 
-static void logitm_start(void)
+void logitm_start(void)
 {
   CMU->HFPERCLKEN0 |= CMU_HFPERCLKEN0_GPIO;
   GPIO->ROUTE |= GPIO_ROUTE_SWOPEN;

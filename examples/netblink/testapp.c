@@ -3,6 +3,7 @@
 #include <lwip/udp.h>
 #include <lwip/timers.h>
 
+#include <log.h>
 #include <board.h>
 
 /** Demo application that will listen to UDP port 1234, respond to everything

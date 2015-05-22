@@ -8,6 +8,8 @@
 
 #include <netif/mchdrv.h>
 
+#include <log.h>
+#include <log-itm.h>
 #include <rtc.h>
 #include <board.h>
 #include <enc28j60.h>

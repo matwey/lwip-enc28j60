@@ -5,20 +5,18 @@
 
 #include "log.h"
 
-#include <stdio.h>
-
-#include <em_cmu.h>
-#include <core_cm3.h>
+#include <stdint.h>
+#include <stddef.h>
 
 static void (*current_log_implementation)(char *message, va_list argp) = NULL;
 static void (*current_log_deregisterer)(void) = NULL;
 
 void log_backend_set(void (*impl)(char *, va_list), void (deregister)(void))
 {
-	if (current_log_deregister != NULL)
-		current_log_deregister();
+	if (current_log_deregisterer != NULL)
+		current_log_deregisterer();
 	current_log_implementation = impl;
-	current_log_deregister = deregister
+	current_log_deregisterer = deregister;
 }
 
 void log_message(char *message, ...)
