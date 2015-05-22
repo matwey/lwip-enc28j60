@@ -22,7 +22,7 @@ BOARD_OBJS = board.o
 CFLAGS += -I ../../efm32/boards/${BOARD}/
 vpath %.c ../../efm32/boards/${BOARD}/
 
-DRIVER_OBJS = enc28j60.o enchw.o rtc-efm32rtc.o
+DRIVER_OBJS = enc28j60.o enchw.o rtc-efm32rtc.o log.o log-itm.o
 vpath %.c ../../enc28j60driver ../../efm32/enchw
 CFLAGS += -DENC28J60_USE_PBUF # configure the enc28j60 backend to build functions that involve lwip buffer mgmt
 CFLAGS += -I../../enc28j60driver -I../../efm32/enchw
@@ -96,7 +96,7 @@ vpath %.c ../../lwip/netif
 CFLAGS += -I/usr/include/newlib/
 LDFLAGS += -L/usr/lib/arm-none-eabi/newlib/armv7-m/
 LDFLAGS += -B/usr/lib/arm-none-eabi/newlib/armv7-m/
-LDFLAGS += -lc -lnosys
+LDFLAGS += -lc -specs=nosys.specs
 
 
 # the main application
