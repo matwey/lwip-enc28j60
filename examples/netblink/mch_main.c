@@ -59,6 +59,8 @@ uint32_t sys_now(void)
 
 int main(void)
 {
+    logitm_start();
+
     rtc_setup();
 
     board_setup();
@@ -67,8 +69,11 @@ int main(void)
 
     testapp_init();
 
+    log_message("Setup completed\n");
+
     while (1) {
         mch_net_poll();
         sys_check_timeouts();
+	log_message("main loop run\n");
     }
 }
