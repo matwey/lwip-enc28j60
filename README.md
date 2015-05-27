@@ -19,9 +19,8 @@ Quick start
   power supply (the programmer only measures and does not power)
 * Get an SWD programmer (ST-Link/V2)
 * Wire everything up the only way the connectors fit
-* Get `openocd` (eg. from Debian, version 0.8.0-131-gbd0409a-0~exp1 or later[1])
-* Get an `arm-none-eabi-gcc` (eg. from the Debian package `gcc-arm-none-eabi`)
-  and `arm-none-eabi-objcopy` (from `binutils-arm-none-eabi`)
+* Get `openocd` (eg. from Debian, tested with version 0.9.0)
+* Get an `arm-none-eabi-gcc` and `-gdb` (eg. from the Debian package `gcc-arm-none-eabi` and `gdb-arm-none-eabi`)
 * Get the EFM32 emlib and CMSIS sources (FIXME: that could need some more details)
 * Fetch the lwIP library and build the example code
 
@@ -35,9 +34,9 @@ Quick start
 
   Leave this running and continue in another terminal.
 
-* Upload the program:
+* Upload the program and let it run independt of the debugger:
 
-        make stlink_upload
+        make upload reset
 
 * Configure your Ethernet interface as 192.168.0.1/24
 * Test everything:
@@ -46,7 +45,10 @@ Quick start
 
 * Enjoy that the LED blinks every time you send a line.
 
-[1] needs to include http://openocd.zylin.com/#/c/1664
+### Debugging
+
+* You can easily start a debuggin session with `make gdb`. The program can be
+  flashed from inside gdb as using the `load` command, a reset using `run`.
 
 ENC28J60 driver
 ---------------

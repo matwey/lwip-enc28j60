@@ -51,7 +51,7 @@ vpath %.c ../../lwip/netif
 # energymicro emlib (required by the board)
 
 	# adapt this if you have simplicity studio installed somewhere
-	EMPATH = /usr/share/energymicro/studio
+	EMPATH = /home/chrysn/debian_packaging/energymicro/energyaware-tools/unpacked/
 	
 	# hardware configuration -- these constants do the dispatching in em_device.h
 	CFLAGS += -D${PARTNUMBER} -D${FAMILYNUMBER}
@@ -155,6 +155,9 @@ all: $(ELFFILE)
 
 upload: ${ELFFILE}
 	arm-none-eabi-gdb -batch -x ./openocd-gdb.cfg -ex "load" $<
+
+reset: ${ELFFILE}
+	arm-none-eabi-gdb -batch -x ./openocd-gdb.cfg -ex "monitor reset" $<
 
 gdb: ${ELFFILE}
 	arm-none-eabi-gdb -x ./openocd-gdb.cfg $<
