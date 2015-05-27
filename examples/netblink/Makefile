@@ -157,21 +157,17 @@ ${ELFFILE}.bin: ${ELFFILE}
 	arm-none-eabi-objcopy -Obinary $< $@
 
 stlink_upload: ${ELFFILE}.bin
-	arm-none-eabi-gdb -x ./openocd-gdb.cfg \
+	arm-none-eabi-gdb -batch -x ./openocd-gdb.cfg \
 		-ex "monitor halt" \
 		-ex "monitor flash write_image erase $<" \
 		-ex "monitor verify_image $<" \
-		-ex "monitor reset" \
-		-ex "disconnect" \
-		-ex "quit"
+		-ex "monitor reset"
 
 stlink_readswo:
-	arm-none-eabi-gdb -x ./openocd-gdb.cfg \
+	arm-none-eabi-gdb -batch -x ./openocd-gdb.cfg \
 		-ex "monitor efm32.cpu tpiu config internal /tmp/readswo-in uart off 14000000" \
 		-ex "monitor itm ports off" \
-		-ex "monitor itm port 0 on" \
-		-ex "disconnect" \
-		-ex "quit"
+		-ex "monitor itm port 0 on"
 
 gdb: ${ELFFILE}
 	arm-none-eabi-gdb -x ./openocd-gdb.cfg $<
