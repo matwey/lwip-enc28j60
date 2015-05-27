@@ -151,17 +151,10 @@ ${ELFFILE}: ${BUILDOBJS}
 -include $(BUILDOBJS:%.o=%.d)
 CFLAGS += -MD -MP
 
-all: $(ELFFILE).bin
+all: $(ELFFILE)
 
-${ELFFILE}.bin: ${ELFFILE}
-	arm-none-eabi-objcopy -Obinary $< $@
-
-upload: ${ELFFILE}.bin
-	arm-none-eabi-gdb -batch -x ./openocd-gdb.cfg \
-		-ex "monitor halt" \
-		-ex "monitor flash write_image erase $<" \
-		-ex "monitor verify_image $<" \
-		-ex "monitor reset"
+upload: ${ELFFILE}
+	arm-none-eabi-gdb -batch -x ./openocd-gdb.cfg -ex "load" $<
 
 gdb: ${ELFFILE}
 	arm-none-eabi-gdb -x ./openocd-gdb.cfg $<
