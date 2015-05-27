@@ -46,17 +46,6 @@ Quick start
 
 * Enjoy that the LED blinks every time you send a line.
 
-Need debug output?
-
-* In a dedicated terminal, run
-
-        socat pipe:/tmp/readswo-in - | ./swodecoder.py /dev/stdin
-
-* make stlink_readswo
-
-* Make the LED blink several times; some buffering is still involved in the
-  output path.
-
 [1] needs to include http://openocd.zylin.com/#/c/1664
 
 ENC28J60 driver
