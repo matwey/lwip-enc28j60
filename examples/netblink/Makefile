@@ -2,7 +2,6 @@
 #BOARD = efm32gg-stk3700
 #PARTNUMBER = EFM32GG990F1024
 #FAMILYNUMBER = EFM32GG
-#EACOMMANDER_DIRECTION = mcu
 
 # use this section with the olimex board
 BOARD = olimex-efm32g880f128-h
