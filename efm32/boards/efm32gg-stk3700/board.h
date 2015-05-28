@@ -46,3 +46,7 @@ void led0_off(void);
 void led1_off(void);
 bool button0_pressed(void);
 bool button1_pressed(void);
+
+#define led2_on led0_on
+#define led2_off led0_off
+#define button_pressed button0_pressed
