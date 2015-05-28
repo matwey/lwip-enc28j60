@@ -29,13 +29,6 @@ void enchw_setup(enchw_device_t __attribute__((unused)) *dev)
 	CMU_ClockEnable(cmuClock_GPIO, true);
 	CMU_ClockEnable(USART_CLOCK, true);
 
-	/* if you prefer to run from hfxo, enable this block instead of the following line */
-	/*
-	CMU_OscillatorEnable(cmuOsc_HFXO, true, true);
-	CMU_ClockSelectSet(cmuClock_HF, cmuSelect_HFXO);
-	*/
-	CMU_HFRCOBandSet(cmuHFRCOBand_28MHz);
-
 	/* ss is active low */
 	GPIO_PinModeSet(SS_PORT, SS_PIN, gpioModePushPull, 1);
 	GPIO_PinModeSet(MOSI_PORT, MOSI_PIN, gpioModePushPull, 0);

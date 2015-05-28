@@ -4,6 +4,13 @@
 
 void board_setup(void)
 {
+	/* if you prefer to run from hfxo, enable this block instead of the following line */
+	/*
+	CMU_OscillatorEnable(cmuOsc_HFXO, true, true);
+	CMU_ClockSelectSet(cmuClock_HF, cmuSelect_HFXO);
+	*/
+	CMU_HFRCOBandSet(cmuHFRCOBand_28MHz);
+
 	/* generic gpio activation */
 	CMU_ClockEnable(cmuClock_GPIO, true);
 	GPIO_PinModeSet(LED1_PORT, LED1_PIN, gpioModePushPull, 1);
