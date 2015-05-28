@@ -46,6 +46,8 @@ CFLAGS += -I../../lwip
 vpath %.c ../../lwip/netif
 
 
+familynumber = $(shell echo $(FAMILYNUMBER) | tr A-Z a-z)
+
 # use either section (but not both)
 
 # energymicro emlib (required by the board)
@@ -56,16 +58,16 @@ vpath %.c ../../lwip/netif
 	# hardware configuration -- these constants do the dispatching in em_device.h
 	CFLAGS += -D${PARTNUMBER} -D${FAMILYNUMBER}
 	
-	OBJS += em_cmu.o em_gpio.o em_usart.o em_rtc.o em_emu.o system_efm32g.o
-	CFLAGS += -I${EMPATH}/emlib/inc/ -I${EMPATH}/Device/EnergyMicro/EFM32G/Include/
-	vpath %.c ${EMPATH}/emlib/src/ ${EMPATH}/Device/EnergyMicro/EFM32G/Source/
+	OBJS += em_cmu.o em_gpio.o em_usart.o em_rtc.o em_emu.o system_${familynumber}.o
+	CFLAGS += -I${EMPATH}/emlib/inc/ -I${EMPATH}/Device/EnergyMicro/${FAMILYNUMBER}/Include/
+	vpath %.c ${EMPATH}/emlib/src/ ${EMPATH}/Device/EnergyMicro/${FAMILYNUMBER}/Source/
 	
 	CFLAGS += -I${EMPATH}/CMSIS/Include/
-	OBJS += startup_efm32g.o
-	vpath %.S ${EMPATH}/Device/EnergyMicro/EFM32G/Source/GCC/
+	OBJS += startup_${familynumber}.o
+	vpath %.S ${EMPATH}/Device/EnergyMicro/${FAMILYNUMBER}/Source/GCC/
 	
 	# linker script from energymicro
-	LDFLAGS += -Tefm32g.ld -L ${EMPATH}/Device/EnergyMicro/EFM32G/Source/GCC/
+	LDFLAGS += -T${familynumber}.ld -L ${EMPATH}/Device/EnergyMicro/${FAMILYNUMBER}/Source/GCC/
 
 # alternative: emlib precompiled with opebcmsis
 
