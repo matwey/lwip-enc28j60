@@ -11,11 +11,22 @@ static char buffer[LOGSIZE];
 static void logitm_message_impl(char *message, va_list argp)
 {
 	size_t length;
+	bool overflow = false;
 
 	length = vsniprintf(buffer, LOGSIZE, message, argp);
 
+	if (length > LOGSIZE) {
+		length = LOGSIZE;
+		overflow = true;
+	}
+
 	for (size_t i = 0; i < length; ++i)
 		ITM_SendChar(buffer[i]);
+
+	if (overflow) {
+		const char *oftext = "(overflow)\n";
+		while (*oftext != '\0') ITM_SendChar(*(oftext++));
+	}
 }
 
 static void logitm_disable(void)
