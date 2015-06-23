@@ -38,6 +38,8 @@
 #define EXT_LEUART LEUART0
 #define EXT_LEUART_CLOCK cmuClock_LEUART0
 #define EXT_LEUART_ROUTELOCATION LEUART_ROUTE_LOCATION_LOC0
+#define EXT_LEUART_NVIC_IRQ NVIC_LEUART0_IRQ
+#define EXT_LEUART_ISR leuart0_isr
 
 void board_setup(void);
 void led0_on(void);
