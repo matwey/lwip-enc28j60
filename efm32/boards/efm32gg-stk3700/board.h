@@ -1,7 +1,13 @@
-/* Pinout definitions for the EnergyMicro EFM32GG STK3700 board */
+/* Pinout definitions for the EnergyMicro EFM32GG STK3700 board
+ *
+ * Only some of those are used in the enchw shipped here, but it is nontheless
+ * prudent to declare all utilized pins in a single board definition.
+ * */
 
 #include <em_gpio.h>
 
+#define EXT3_PORT gpioPortC
+#define EXT3_PIN 0
 #define EXT4_PORT gpioPortD
 #define EXT4_PIN 0
 #define EXT5_PORT gpioPortC
@@ -12,12 +18,24 @@
 #define EXT7_PIN 4
 #define EXT8_PORT gpioPortD
 #define EXT8_PIN 2
+#define EXT9_PORT gpioPortC
+#define EXT9_PIN 5
+#define EXT10_PORT gpioPortD
+#define EXT10_PIN 3
+#define EXT11_PORT gpioPortB
+#define EXT11_PIN 11
 #define EXT12_PORT gpioPortD
 #define EXT12_PIN 4
+#define EXT13_PORT gpioPortB
+#define EXT13_PIN 12
 #define EXT14_PORT gpioPortD
 #define EXT14_PIN 5
 #define EXT15_PORT gpioPortD
 #define EXT15_PIN 7
+#define EXT16_PORT gpioPortD
+#define EXT16_PIN 6
+#define EXT17_PORT gpioPortC
+#define EXT17_PIN 6
 
 #define LED0_PORT gpioPortE
 #define LED0_PIN 2
@@ -48,6 +66,8 @@ void led0_off(void);
 void led1_off(void);
 bool button0_pressed(void);
 bool button1_pressed(void);
+
+/* kept for compatibility with similar boards ... remove at will and fix what breaks */
 
 #define led2_on led0_on
 #define led2_off led0_off
