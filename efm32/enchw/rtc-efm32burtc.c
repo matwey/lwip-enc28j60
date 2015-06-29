@@ -51,7 +51,7 @@ static volatile uint32_t high64; /**< The overflowing part of the 32bit value co
  * avoid issues when writing during power loss.
  *
  * The 128 registers can be accessed by offset and length; for each offset
- * used, (length + 1) * 2 bytes are used in two groups (a primary and a
+ * used, (length + 1) * 2 registers are used in two groups (a primary and a
  * secondary), each with a primitive checksum.
  *
  * @{ */
@@ -73,14 +73,19 @@ static bool regs_valid(uint8_t index, uint8_t n)
 void rtc_regs_store(uint8_t index, uint8_t n, uint32_t *value)
 {
 	uint32_t *writecursor;
+	uint32_t *destroyme;
 	if (regs_valid(index, n)) {
 		writecursor = &(REG(index + n + 1));
+		destroyme = &(REG(index + n));
 	} else {
 		writecursor = &(REG(index));
+		destroyme = NULL;
 	}
 	uint32_t checksum = regs_checksum(n, value);
 	while (n--) *(writecursor++) = *(value++);
 	*writecursor = checksum;
+	if (destroyme != NULL)
+		*destroyme += 1;
 }
 
 bool rtc_regs_retrieve(uint8_t index, uint8_t n, uint32_t *value)
