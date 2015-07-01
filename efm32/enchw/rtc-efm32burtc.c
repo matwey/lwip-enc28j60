@@ -37,71 +37,16 @@
  */
 
 #include "rtc.h"
+#include "burtc-regs.h"
 #include <em_emu.h>
 #include <em_burtc.h>
 #include <em_cmu.h>
 #include <em_chip.h>
 #include <em_rmu.h>
 
+#include <stddef.h>
+
 static volatile uint32_t high64; /**< The overflowing part of the 32bit value composed of high32 and the register */
-
-/** @addtogroup rfc-efm32burtc-impl-regs Retention registers
- *
- * This is a simplistic approach to checksummed doublebuffered registers to
- * avoid issues when writing during power loss.
- *
- * The 128 registers can be accessed by offset and length; for each offset
- * used, (length + 1) * 2 registers are used in two groups (a primary and a
- * secondary), each with a primitive checksum.
- *
- * @{ */
-
-#define REG(index) BURTC->RET[index].REG
-
-static uint32_t regs_checksum(uint8_t n, uint32_t *data)
-{
-	uint32_t result = 0;
-	while (n--) result ^= *(data++);
-	return ~result; /* negate to avoid empty memory being valid */
-}
-
-static bool regs_valid(uint8_t index, uint8_t n)
-{
-	return regs_checksum(n, &(REG(index))) == REG(index + n);
-}
-
-void rtc_regs_store(uint8_t index, uint8_t n, uint32_t *value)
-{
-	uint32_t *writecursor;
-	uint32_t *destroyme;
-	if (regs_valid(index, n)) {
-		writecursor = &(REG(index + n + 1));
-		destroyme = &(REG(index + n));
-	} else {
-		writecursor = &(REG(index));
-		destroyme = NULL;
-	}
-	uint32_t checksum = regs_checksum(n, value);
-	while (n--) *(writecursor++) = *(value++);
-	*writecursor = checksum;
-	if (destroyme != NULL)
-		*destroyme += 1;
-}
-
-bool rtc_regs_retrieve(uint8_t index, uint8_t n, uint32_t *value)
-{
-	uint32_t *readcursor = 0;
-	if (regs_valid(index, n)) {
-		readcursor = &(REG(index));
-	} else if (regs_valid(index + n + 1, n)) {
-		readcursor = &(REG(index + n + 1));
-	}
-	if (readcursor == 0) return false;
-	while (n--) *(value++) = *(readcursor++);
-	return true;
-}
-
-/** @} */
 
 /** If using this as an interrupt is not an option, it can just as well be
  * called in another fashion as rtc_maintenance. */
@@ -114,7 +59,7 @@ void BURTC_IRQHandler(void)
 	BURTC->IFC = BURTC_IF_OF;
 
 	high64 += 1;
-	rtc_regs_store(0, 1, &high64);
+	burtc_regs_store(0, 1, &high64);
 
         __asm__("CPSIE I\n"); /* should be __enable_irq  or cm_enable_interrupts */
 }
@@ -151,7 +96,7 @@ void rtc_setup(void)
 			timestamp_is_usable = false;
 		}
 
-		if (timestamp_is_usable && !rtc_regs_retrieve(0, 1, &high64)) {
+		if (timestamp_is_usable && !burtc_regs_retrieve(0, 1, &high64)) {
 			timestamp_is_usable = false;
 		}
 
@@ -231,7 +176,7 @@ void rtc_setup(void)
 		}
 
 		high64 = 0;
-		rtc_regs_store(0, 1, &high64);
+		burtc_regs_store(0, 1, &high64);
 
 		/* be careful not to clear this early -- if we wake up to an
 		 * overflow condition, the above invalidation must have

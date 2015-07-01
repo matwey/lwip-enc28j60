@@ -70,10 +70,4 @@ uint64_t rtc_get64(void);
 /** Get the number of ms expired since the start of the system. */
 uint64_t rtc_get_ms64(void)/* __attribute__((optimize("O3")))*/;
 
-/** This is currently a pretty raw API for using the EFM32 Backup RTC data
- * retention registers. @{ */
-void rtc_regs_store(uint8_t index, uint8_t n, uint32_t *value);
-bool rtc_regs_retrieve(uint8_t index, uint8_t n, uint32_t *value);
-/** @} */
-
 /** @} */
