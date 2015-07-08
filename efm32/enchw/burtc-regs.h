@@ -27,7 +27,7 @@
 
 /** Copy @p length words from @p value into the retention registers @p index
  * (consuming memory up to excluding index + 2 * (length + 1). */
-void burtc_regs_store(uint8_t index, uint8_t length, uint32_t *value);
+void burtc_regs_store(uint8_t index, uint8_t length, const uint32_t *value);
 
 /** Read @p length words from retention registers @p index into the prepared
  * buffer at @p value.
