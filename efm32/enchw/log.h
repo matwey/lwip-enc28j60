@@ -11,7 +11,6 @@
 #include <stdarg.h>
 
 void log_backend_set(void (*impl)(char *, va_list), void (deregister)(void));
-
-void log_message(char *message, ...);
+void log_message(char *message, ...) __attribute__((format(printf, 1, 2)));
 
 /** @} */
