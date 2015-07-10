@@ -31,6 +31,10 @@ void log_message(char *message, ...)
 	va_end(argp);
 }
 
+/* there is no need for this function on any other architecture, it would only
+ * make compilers sad, so it's made conditional so that logging can be shared
+ * with other platforms */
+#if __ARM_ARCH_ISA_ARM
 /** Enhanced version of the libopencm3 default interrupt handler, which
  * logs the offending interrupt. */
 void blocking_handler_implementation(void)
@@ -42,3 +46,4 @@ void blocking_handler_implementation(void)
 }
 
 /** @} */
+#endif
