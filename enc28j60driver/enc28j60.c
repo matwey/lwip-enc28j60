@@ -360,6 +360,8 @@ void transmit_partial(enc_device_t *dev, uint8_t *data, uint16_t length)
 
 void transmit_end(enc_device_t *dev, uint16_t length)
 {
+	uint8_t result[7];
+
 	/* calculate checksum */
 
 //	enc_WCR16(dev, ENC_EDMASTL, start + 1);
@@ -398,7 +400,6 @@ void transmit_end(enc_device_t *dev, uint16_t length)
 
 	return;
 done:
-	uint8_t result[7];
 	enc_RBM(dev, result, dev->rxbufsize + 1 + length, 7);
 	DEBUG("transmitted. %02x %02x %02x %02x %02x %02x %02x\n", result[0], result[1], result[2], result[3], result[4], result[5], result[6]);
 
