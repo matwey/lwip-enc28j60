@@ -30,20 +30,3 @@ void log_message(char *message, ...)
 
 	va_end(argp);
 }
-
-/* there is no need for this function on any other architecture, it would only
- * make compilers sad, so it's made conditional so that logging can be shared
- * with other platforms */
-#if __ARM_ARCH_ISA_ARM
-/** Enhanced version of the libopencm3 default interrupt handler, which
- * logs the offending interrupt. */
-void blocking_handler_implementation(void)
-{
-	register uint32_t IPSR;
-	__asm__ ("MRS %0, IPSR"  : "=r" (IPSR));
-	log_message("Unhandled interrupt %#x (IRQ %d), entering endless loop.\n", IPSR & 0xff, (IPSR & 0xff) - 16);
-	for(;;);
-}
-
-/** @} */
-#endif
