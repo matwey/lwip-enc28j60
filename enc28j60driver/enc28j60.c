@@ -379,8 +379,25 @@ void transmit_end(enc_device_t *dev, uint16_t length)
 	enc_BFS(dev, ENC_ECON1, ENC_ECON1_TXRTS);
 
 	/* block */
-	while (enc_RCR(dev, ENC_ECON1) & ENC_ECON1_TXRTS);
+	for (int i = 0; i < 10000; ++i) {
+		if (!(enc_RCR(dev, ENC_ECON1) & ENC_ECON1_TXRTS))
+			goto done;
+	}
+	/* Workaround for 80349c.pdf (errata) #12 and #13: Reset the
+	 * transmission logic after an arbitrary timeout.
+	 *
+	 * This is not a particularly good workaround, neither in terms of
+	 * networking behavior (no retransmission is attempted as suggested for
+	 * #13) nor in terms of driver (just blocking for some time that is
+	 * hopefully long enough but not too long to bother the watchdog), but
+	 * it should work.
+	 * */
+	DEBUG("Econ1 TXRTS did not clear; resetting transmission logic.\n");
+	enc_BFS(dev, ENC_ECON1, ENC_ECON1_TXRST);
+	enc_BFC(dev, ENC_ECON1, ENC_ECON1_TXRST);
 
+	return;
+done:
 	uint8_t result[7];
 	enc_RBM(dev, result, dev->rxbufsize + 1 + length, 7);
 	DEBUG("transmitted. %02x %02x %02x %02x %02x %02x %02x\n", result[0], result[1], result[2], result[3], result[4], result[5], result[6]);
