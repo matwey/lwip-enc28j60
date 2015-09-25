@@ -47,49 +47,23 @@ vpath %.c ../../lwip/netif
 
 familynumber = $(shell echo $(FAMILYNUMBER) | tr A-Z a-z)
 
-# use either section (but not both)
+CMSISPATH = ./mbed/libraries/mbed/targets/cmsis/
+EMPATH_CODE = mbed/libraries/mbed/targets/hal/TARGET_Silicon_Labs/TARGET_EFM32
+EMPATH_CMSIS = mbed/libraries/mbed/targets/cmsis/TARGET_Silicon_Labs/TARGET_EFM32/TARGET_${FAMILYNUMBER}_STK3700/
+EMPATH_LD = ${EMPATH_CMSIS}/TOOLCHAIN_GCC_ARM/
 
-# energymicro emlib (required by the board)
+# hardware configuration -- these constants do the dispatching in em_device.h
+CFLAGS += -D${PARTNUMBER} -D${FAMILYNUMBER}
 
-	# adapt this if you have simplicity studio installed somewhere
-	EMPATH = /home/chrysn/debian_packaging/energymicro/energyaware-tools/unpacked/
-	
-	# hardware configuration -- these constants do the dispatching in em_device.h
-	CFLAGS += -D${PARTNUMBER} -D${FAMILYNUMBER}
-	
-	OBJS += em_cmu.o em_gpio.o em_usart.o em_rtc.o em_emu.o system_${familynumber}.o
-	CFLAGS += -I${EMPATH}/emlib/inc/ -I${EMPATH}/Device/EnergyMicro/${FAMILYNUMBER}/Include/
-	vpath %.c ${EMPATH}/emlib/src/ ${EMPATH}/Device/EnergyMicro/${FAMILYNUMBER}/Source/
-	
-	CFLAGS += -I${EMPATH}/CMSIS/Include/
-	OBJS += startup_${familynumber}.o
-	vpath %.S ${EMPATH}/Device/EnergyMicro/${FAMILYNUMBER}/Source/GCC/
-	
-	# linker script from energymicro
-	LDFLAGS += -T${familynumber}.ld -L ${EMPATH}/Device/EnergyMicro/${FAMILYNUMBER}/Source/GCC/
+OBJS += em_cmu.o em_gpio.o em_usart.o em_rtc.o em_emu.o system_${familynumber}.o
+CFLAGS += -I${EMPATH_CODE}/emlib/inc/ -I${EMPATH_CMSIS} -I${CMSISPATH}
+vpath %.c ${EMPATH_CODE}/emlib/src/ ${EMPATH_CMSIS}
 
-# alternative: emlib precompiled with opebcmsis
+OBJS += startup_${familynumber}.o
+vpath %.S ${EMPATH_LD}
 
-#	# for emlib
-#	CFLAGS += -I/usr/lib/arm-none-eabi/include/
-#	# for libopencm3
-#	CFLAGS += -I/usr/arm-none-eabi/include/
-#	# extra for opencmsis
-#	CFLAGS += -I/usr/arm-none-eabi/include/libopencmsis/
-#
-#	# linker script from libopencm3
-#	LDFLAGS += -Tlibopencm3_efm32g880f128.ld -L/usr/arm-none-eabi/lib/
-#
-#	# have to match what's in the library
-#	CFLAGS += -D${PARTNUMBER} -D${FAMILYNUMBER}
-#	LDLIBS += -lopencm3_efm32g
-#	LDLIBS += -lemlib-efm32g880f128
-#
-#	# the linker script provided here does not need the crt?.o objects, but
-#	# it seems they can be left in place with no ill effect.
-#	#LDFLAGS += -nostartfiles
-
-# end of alternatives
+# linker script from energymicro
+LDFLAGS += -T${familynumber}.ld -L ${EMPATH_LD}
 
 
 # use newlib as the libc

@@ -2,5 +2,6 @@
 html
 # unless someone wants to do a submodule here
 examples/netblink/lwip
+examples/netblink/mbed
 # object and binary files
 examples/netblink/build

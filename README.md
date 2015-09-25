@@ -14,6 +14,9 @@ extension, especially with respect to error reporting and optimization.
 Quick start
 -----------
 
+(This is process is currently broken, as mbed does not ship the EFM32G chip
+libraries; you'll need to find the libraries in Simplicity Studio instead.)
+
 * Get a ENC28J60 chip with UEXT connector (MOD-ENC28J60 from Olimex)
 * Get a Gecko chip with UEXT connector (EM-32G880F128-H from Olimex) with a
   power supply (the programmer only measures and does not power)
@@ -21,11 +24,19 @@ Quick start
 * Wire everything up the only way the connectors fit
 * Get `openocd` (eg. from Debian, tested with version 0.9.0)
 * Get an `arm-none-eabi-gcc` and `-gdb` (eg. from the Debian package `gcc-arm-none-eabi` and `gdb-arm-none-eabi`)
-* Get the EFM32 emlib and CMSIS sources (FIXME: that could need some more details)
-* Fetch the lwIP library and build the example code
+* Get the EFM32 emlib and CMSIS sources. [Upstream][1] provides them them only
+  through their Simplicity Studio suite, but a version is [contained in
+  embed][2]
 
-        cd examples/netblink/
+        cd examples/netblink
+        git clone https://github.com/mbedmicro/mbed.git -b mbed_lib_rev107
+
+* In the same directory, fetch the lwIP library ...
+
         git clone git://git.savannah.nongnu.org/lwip.git -b DEVEL-1_4_1
+
+* ... and build the example code:
+
         make
 
 * Start `openocd`:
@@ -49,6 +60,11 @@ Quick start
 
 * You can easily start a debuggin session with `make gdb`. The program can be
   flashed from inside gdb as using the `load` command, a reset using `run`.
+
+### Links
+
+[1]: http://www.silabs.com/
+[2]: https://github.com/mbedmicro/mbed/tree/master/libraries/mbed/targets/hal/TARGET_Silicon_Labs/TARGET_EFM32/emlib
 
 ENC28J60 driver
 ---------------
