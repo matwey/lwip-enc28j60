@@ -45,25 +45,20 @@ CFLAGS += -I../../lwip
 vpath %.c ../../lwip/netif
 
 
-familynumber = $(shell echo $(FAMILYNUMBER) | tr A-Z a-z)
+# silicon labs' emlib (hardware libraries, startup code)
 
-CMSISPATH = ./mbed/libraries/mbed/targets/cmsis/
-EMPATH_CODE = mbed/libraries/mbed/targets/hal/TARGET_Silicon_Labs/TARGET_EFM32
-EMPATH_CMSIS = mbed/libraries/mbed/targets/cmsis/TARGET_Silicon_Labs/TARGET_EFM32/TARGET_${FAMILYNUMBER}_STK3700/
-EMPATH_LD = ${EMPATH_CMSIS}/TOOLCHAIN_GCC_ARM/
+familynumber = $(shell echo $(FAMILYNUMBER) | tr A-Z a-z)
 
 # hardware configuration -- these constants do the dispatching in em_device.h
 CFLAGS += -D${PARTNUMBER} -D${FAMILYNUMBER}
 
-OBJS += em_cmu.o em_gpio.o em_usart.o em_rtc.o em_emu.o system_${familynumber}.o
-CFLAGS += -I${EMPATH_CODE}/emlib/inc/ -I${EMPATH_CMSIS} -I${CMSISPATH}
-vpath %.c ${EMPATH_CODE}/emlib/src/ ${EMPATH_CMSIS}
+SDK_PATH = ./Gecko_SDK/
+LDPATH = ${SDK_PATH}/Device/SiliconLabs/${FAMILYNUMBER}/Source/GCC/
 
-OBJS += startup_${familynumber}.o
-vpath %.S ${EMPATH_LD}
-
-# linker script from energymicro
-LDFLAGS += -T${familynumber}.ld -L ${EMPATH_LD}
+OBJS += em_cmu.o em_gpio.o em_usart.o em_rtc.o em_emu.o system_${familynumber}.o startup_${familynumber}.o
+CFLAGS += -I${SDK_PATH}/emlib/inc/ -I${SDK_PATH}/Device/SiliconLabs/${FAMILYNUMBER}/Include/ -I${SDK_PATH}/CMSIS/Include/
+vpath %.c ${SDK_PATH}/emlib/src/ ${SDK_PATH}/Device/SiliconLabs/${FAMILYNUMBER}/Source/ ${LDPATH}
+LDFLAGS += -T${familynumber}.ld -L ${LDPATH}
 
 
 # use newlib as the libc

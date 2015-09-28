@@ -14,9 +14,6 @@ extension, especially with respect to error reporting and optimization.
 Quick start
 -----------
 
-(This is process is currently broken, as mbed does not ship the EFM32G chip
-libraries; you'll need to find the libraries in Simplicity Studio instead.)
-
 * Get a ENC28J60 chip with UEXT connector (MOD-ENC28J60 from Olimex)
 * Get a Gecko chip with UEXT connector (EM-32G880F128-H from Olimex) with a
   power supply (the programmer only measures and does not power)
@@ -24,12 +21,13 @@ libraries; you'll need to find the libraries in Simplicity Studio instead.)
 * Wire everything up the only way the connectors fit
 * Get `openocd` (eg. from Debian, tested with version 0.9.0)
 * Get an `arm-none-eabi-gcc` and `-gdb` (eg. from the Debian package `gcc-arm-none-eabi` and `gdb-arm-none-eabi`)
-* Get the EFM32 emlib and CMSIS sources. [Upstream][1] provides them them only
-  through their Simplicity Studio suite, but a version is [contained in
-  embed][2]
+
+* Get the EFM32 emlib and CMSIS sources. Not everything contained in there is
+  free software, but the parts used in the netblink example are:
 
         cd examples/netblink
-        git clone https://github.com/mbedmicro/mbed.git -b mbed_lib_rev107
+        wget http://www.silabs.com/Support%20Documents/Software/Gecko_SDK.zip
+        unzip Gecko_SDK.zip -d Gecko_SDK Device/\*.\[hc\] Device/\*/GCC/\* emlib/\*.\[hc\] CMSIS/\*.h
 
 * In the same directory, fetch the lwIP library ...
 

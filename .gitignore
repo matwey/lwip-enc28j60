@@ -2,6 +2,8 @@
 html
 # unless someone wants to do a submodule here
 examples/netblink/lwip
-examples/netblink/mbed
+# unfortunately not suitable for submodules
+examples/netblink/Gecko_SDK
+examples/netblink/Gecko_SDK.zip
 # object and binary files
 examples/netblink/build
