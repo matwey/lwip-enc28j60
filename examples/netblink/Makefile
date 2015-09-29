@@ -64,9 +64,9 @@ LDFLAGS += -T${familynumber}.ld -L ${LDPATH}
 # use newlib as the libc
 
 CFLAGS += -I/usr/include/newlib/
-LDFLAGS += -L/usr/lib/arm-none-eabi/newlib/armv7-m/
 LDFLAGS += -B/usr/lib/arm-none-eabi/newlib/armv7-m/
-LDFLAGS += -lc -specs=nosys.specs
+LDLIBS += -lc_nano
+LDFLAGS += -specs=nosys.specs
 
 
 # the main application
