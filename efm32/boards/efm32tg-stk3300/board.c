@@ -1,0 +1,1 @@
+../efm32gg-stk3700/board.c

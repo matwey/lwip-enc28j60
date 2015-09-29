@@ -8,6 +8,12 @@ BOARD = olimex-efm32g880f128-h
 PARTNUMBER = EFM32G880F128
 FAMILYNUMBER = EFM32G
 
+## use this section with the energyicro tinygecko stk board
+#BOARD = efm32tg-stk3300
+#PARTNUMBER = EFM32TG840F32
+#FAMILYNUMBER = EFM32TG
+#CFLAGS += -D__STACK_SIZE=0x200
+
 BUILDDIR = build
 
 
