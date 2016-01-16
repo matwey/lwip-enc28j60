@@ -493,7 +493,9 @@ int enc_read_received_pbuf(enc_device_t *dev, struct pbuf **buf)
 		return 1;
 
 	receive_start(dev, header, &length);
+	length -= 4; /* Drop the 4 byte CRC from length */
 
+	/* pbuf processing looks at the total length of pbuf */
 	*buf = pbuf_alloc(PBUF_RAW, length, PBUF_RAM);
 	if (*buf == NULL)
 		DEBUG("failed to allocate buf of length %u, discarding", length);
