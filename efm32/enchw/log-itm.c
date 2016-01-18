@@ -32,10 +32,11 @@ static void logitm_message_impl(char *message, va_list argp)
 static void logitm_disable(void)
 {
 	/* In theory, this should undo everything configured in logitm_start.
-	 * As others are likely to use some functionality of this as well,
-	 * we'll just disable the GPIO pin routing */
-
-	GPIO->ROUTE &= ~GPIO_ROUTE_SWOPEN;
+	 *
+	 * To keep the pin usable when logitm_start is called later again, we're not
+	 * disabling anything here. (When any other application comes along that uses
+	 * the same channel, I'll hopefully know how to coordinate a handover.)
+	 */
 }
 
 void logitm_start(void)
