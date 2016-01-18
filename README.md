@@ -11,6 +11,10 @@ It provides all the functionality required for stable send/receive operation
 extension, especially with respect to error reporting and optimization.
 (Current code relies on polling only, and utilizes neither DMA nor interrupts.)
 
+The official website of this repository is [at GitLab](https://gitlab.com/enc28j60driver/enc28j60driver);
+please report issues or send pull requests there. The project's documentation
+can be built with Doxygen
+
 Quick start
 -----------
 
@@ -58,11 +62,6 @@ Quick start
 
 * You can easily start a debuggin session with `make gdb`. The program can be
   flashed from inside gdb as using the `load` command, a reset using `run`.
-
-### Links
-
-[1]: http://www.silabs.com/
-[2]: https://github.com/mbedmicro/mbed/tree/master/libraries/mbed/targets/hal/TARGET_Silicon_Labs/TARGET_EFM32/emlib
 
 ENC28J60 driver
 ---------------
