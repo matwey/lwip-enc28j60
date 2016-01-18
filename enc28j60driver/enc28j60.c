@@ -338,6 +338,14 @@ void enc_ethernet_setup(enc_device_t *dev, uint16_t rxbufsize, uint8_t mac[6])
 	enc_BFC(dev, ENC_ECON1, ENC_ECON1_TXRST | ENC_ECON1_RXRST);
 }
 
+static uint16_t transmit_start_address(enc_device_t *dev)
+{
+	uint16_t earliest_start = dev->rxbufsize + 1; /* +1 because it's not actually the size but the last byte */
+
+	/* It is recommended that an even address be used for ETXST. */
+	return (earliest_start + 1) & ~1;
+}
+
 /* Partial function of enc_transmit. Always call this as transmit_start /
  * {transmit_partial * n} / transmit_end -- and use enc_transmit or
  * enc_transmit_pbuf unless you're just implementing those two */
@@ -348,9 +356,9 @@ void transmit_start(enc_device_t *dev)
 
 	/* 1. */
 	/** @todo we only send a single frame blockingly, starting at the end of rxbuf */
-	enc_WCR16(dev, ENC_ETXSTL, dev->rxbufsize);
+	enc_WCR16(dev, ENC_ETXSTL, transmit_start_address(dev));
 	/* 2. */
-	enc_WBM(dev, &control_byte, dev->rxbufsize, 1);
+	enc_WBM(dev, &control_byte, transmit_start_address(dev), 1);
 }
 
 void transmit_partial(enc_device_t *dev, uint8_t *data, uint16_t length)
@@ -373,7 +381,7 @@ void transmit_end(enc_device_t *dev, uint16_t length)
 //	enc_WBM(dev, &checksum, start + 1 + length - 2, 2);
 
 	/* 3. */
-	enc_WCR16(dev, ENC_ETXNDL, dev->rxbufsize+1+length-1);
+	enc_WCR16(dev, ENC_ETXNDL, transmit_start_address(dev) + 1 + length - 1);
 	
 	/* 4. */
 	/* skipped because not using interrupts yet */
@@ -400,7 +408,7 @@ void transmit_end(enc_device_t *dev, uint16_t length)
 
 	return;
 done:
-	enc_RBM(dev, result, dev->rxbufsize + 1 + length, 7);
+	enc_RBM(dev, result, transmit_start_address(dev) + length, 7);
 	DEBUG("transmitted. %02x %02x %02x %02x %02x %02x %02x\n", result[0], result[1], result[2], result[3], result[4], result[5], result[6]);
 
 	/** @todo parse that and return reasonable state */
