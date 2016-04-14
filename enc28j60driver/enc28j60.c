@@ -236,12 +236,33 @@ void enc_SRC(enc_device_t *dev) {
  * and an unspecified non-zero integer on timeout. */
 int enc_wait(enc_device_t *dev)
 {
-	int i = 0;
-	while (!(enc_RCR(dev, ENC_ESTAT) & ENC_ESTAT_CLKRDY))
-		/** @todo as soon as we need a clock somewhere else, make this
-		 * time and not iteration based */
-		if (i++ == 100000) return 1;
-	return 0;
+	/** @todo as soon as we need a clock somewhere else, make this time and
+	 * not iteration based */
+
+	/** It has been observed that during power-up, MISO reads 1
+	 * continuously for some time, typically the time of 3 readouts; most
+	 * times, this gives 0xff, but occasionally starts with 0x1f or 0x03 or
+	 * even the expected (CLKRDY) value of 0x01. Requiring a much larger
+	 * number of consecutive identical reads to compensate for faster SPI
+	 * configurations. */
+	const int stable_required = 100;
+
+	int stable = 0;
+	uint8_t estat, estat_last = 0;
+	for (int i = 0; i < 100000; ++i) {
+		estat = enc_RCR(dev, ENC_ESTAT);
+		if (estat != 0)
+			DEBUG("At %d, ESTAT is %02x\n", i, estat);
+		if (estat == 0xff) /* sometimes happens right at startup */
+			continue;
+
+		if (estat == estat_last) stable++;
+		estat_last = estat;
+
+		if (stable >= stable_required && estat & ENC_ESTAT_CLKRDY)
+			return 0;
+	}
+	return 1;
 }
 
 uint16_t enc_MII_read(enc_device_t *dev, enc_register_t mireg)
