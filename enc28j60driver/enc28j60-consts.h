@@ -101,8 +101,12 @@ typedef enum {
 	ENC_EBSTCSL = 0x08 | ENC_BANK3,
 	ENC_EBSTCSH = 0x09 | ENC_BANK3,
 	ENC_MISTAT = 0x0a | ENC_BANK3,
-	ENC_EREVID = 0x12 | ENC_BANK3,
 #define ENC_MISTAT_BUSY 1
+	ENC_EREVID = 0x12 | ENC_BANK3,
+#define ENC_EREVID_B1 0x02
+#define ENC_EREVID_B4 0x04
+#define ENC_EREVID_B5 0x05
+#define ENC_EREVID_B7 0x06
 } enc_register_t;
 
 

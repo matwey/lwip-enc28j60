@@ -41,6 +41,11 @@ int enc_setup_basic(enc_device_t *dev)
 	dev->last_used_register = ENC_BANK_INDETERMINATE;
 	dev->rxbufsize = ~0;
 
+	uint8_t revid = enc_RCR(dev, ENC_EREVID);
+	if (revid != ENC_EREVID_B1 && revid != ENC_EREVID_B4 &&
+			revid != ENC_EREVID_B5 && revid != ENC_EREVID_B7)
+		return 1;
+
 	enc_BFS(dev, ENC_ECON2, ENC_ECON2_AUTOINC);
 
 	return 0;
