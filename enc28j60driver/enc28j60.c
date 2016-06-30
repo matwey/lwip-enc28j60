@@ -372,6 +372,18 @@ void enc_ethernet_setup(enc_device_t *dev, uint16_t rxbufsize, uint8_t mac[6])
 	enc_BFC(dev, ENC_ECON1, ENC_ECON1_TXRST | ENC_ECON1_RXRST);
 }
 
+/** Configure whether multicasts should be received.
+ *
+ * The more cmplex hash table mechanism that would allow filtering for
+ * particular groups is not exposed yet. */
+void enc_set_multicast_reception(enc_device_t *dev, int enable)
+{
+	if (enable)
+		enc_BFS(dev, ENC_ERXFCON, 0x2);
+	else
+		enc_BFC(dev, ENC_ERXFCON, 0x2);
+}
+
 static uint16_t transmit_start_address(enc_device_t *dev)
 {
 	uint16_t earliest_start = dev->rxbufsize + 1; /* +1 because it's not actually the size but the last byte */

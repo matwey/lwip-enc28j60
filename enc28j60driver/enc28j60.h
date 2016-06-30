@@ -56,6 +56,7 @@ void enc_LED_set(enc_device_t *dev, enc_lcfg_t ledconfig, enc_led_t led);
 
 void enc_ethernet_setup(enc_device_t *dev, uint16_t rxbufsize, uint8_t mac[6]);
 void enc_transmit(enc_device_t *dev, uint8_t *data, uint16_t length);
+void enc_set_multicast_reception(enc_device_t *dev, int enable);
 uint16_t enc_read_received(enc_device_t *dev, uint8_t *data, uint16_t maxlength);
 
 #ifdef ENC28J60_USE_PBUF

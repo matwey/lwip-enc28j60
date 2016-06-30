@@ -56,6 +56,10 @@ err_t mchdrv_init(struct netif *netif) {
 		return ERR_IF;
 	}
 	enc_ethernet_setup(encdevice, 4*1024, netif->hwaddr);
+	/* enabling this unconditonally: there seems not to be a generic way by
+	 * which protocols indicate their multicast requirements to the netif,
+	 * going for "always on" for now */
+	enc_set_multicast_reception(encdevice, 1);
 
 	netif->output = etharp_output;
 #if LWIP_IPV6
