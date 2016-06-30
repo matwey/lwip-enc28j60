@@ -355,6 +355,14 @@ void enc_ethernet_setup(enc_device_t *dev, uint16_t rxbufsize, uint8_t mac[6])
 	enc_WCR(dev, ENC_MAADR5, mac[4]);
 	enc_WCR(dev, ENC_MAADR6, mac[5]);
 
+	/******* mac initialization as per 6.5 ********/
+
+	/* filter out looped packages; otherwise our own ND6 packages are
+	 * treated as DAD failures. (i can't think of a reason why one would
+	 * not want that; let me know if there is and it culd become configurable) */
+	/* set ENC_PHCON2 bit 8 (HDLDIS) */
+	enc_MII_write(dev, ENC_PHCON1, 0x0100);
+
 	/*************** enabling reception as per 7.2 ***********/
 
 	/* enable reception */
