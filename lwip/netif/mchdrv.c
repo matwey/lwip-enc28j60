@@ -11,7 +11,13 @@ void mchdrv_poll(struct netif *netif) {
 	struct pbuf *buf = NULL;
 
 	uint8_t epktcnt;
+	bool linkstate;
 	enc_device_t *encdevice = (enc_device_t*)netif->state;
+
+	linkstate = enc_MII_read(encdevice, ENC_PHSTAT1) & (1 << 2);
+
+	if (linkstate) netif_set_link_up(netif);
+	else netif_set_link_down(netif);
 
 	epktcnt = enc_RCR(encdevice, ENC_EPKTCNT);
 
@@ -69,7 +75,7 @@ err_t mchdrv_init(struct netif *netif) {
 
 	netif->mtu = 1500; /** FIXME check with documentation when jumboframes can be ok */
 
-	netif->flags |= NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP | NETIF_FLAG_BROADCAST;
+	netif->flags |= NETIF_FLAG_ETHARP | NETIF_FLAG_BROADCAST;
 
 	LWIP_DEBUGF(NETIF_DEBUG, ("Driver initialized.\n"));
 
