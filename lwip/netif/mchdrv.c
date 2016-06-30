@@ -1,6 +1,9 @@
 #include <netif/mchdrv.h>
 #include <lwip/pbuf.h>
 #include <netif/etharp.h>
+#if LWIP_IPV6
+#include <lwip/ethip6.h>
+#endif
 #include "enc28j60.h"
 
 void mchdrv_poll(struct netif *netif) {
@@ -55,6 +58,9 @@ err_t mchdrv_init(struct netif *netif) {
 	enc_ethernet_setup(encdevice, 4*1024, netif->hwaddr);
 
 	netif->output = etharp_output;
+#if LWIP_IPV6
+	netif->output_ip6 = ethip6_output;
+#endif
 	netif->linkoutput = mchdrv_linkoutput;
 
 	netif->mtu = 1500; /** FIXME check with documentation when jumboframes can be ok */
