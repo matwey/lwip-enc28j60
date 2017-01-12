@@ -555,7 +555,12 @@ int enc_read_received_pbuf(enc_device_t *dev, struct pbuf **buf)
 	receive_start(dev, header, &length);
 	length -= 4; /* Drop the 4 byte CRC from length */
 
-	*buf = pbuf_alloc(PBUF_RAW, length, PBUF_RAM);
+	if (length < 32000)
+		*buf = pbuf_alloc(PBUF_RAW, length, PBUF_RAM);
+	else
+		/* workaround for https://savannah.nongnu.org/bugs/index.php?50040 */
+		*buf = NULL;
+
 	if (*buf == NULL)
 		DEBUG("failed to allocate buf of length %u, discarding", length);
 	else
