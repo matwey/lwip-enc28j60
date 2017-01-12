@@ -553,19 +553,29 @@ int enc_read_received_pbuf(enc_device_t *dev, struct pbuf **buf)
 		return 1;
 
 	receive_start(dev, header, &length);
+	if (length < 4) {
+		/* This could be indicative of a crashed (brown-outed?) ENC28J60 controller */
+		DEBUG("Empty frame (length %u)\n", length);
+		goto end;
+	}
 	length -= 4; /* Drop the 4 byte CRC from length */
 
-	if (length < 32000)
-		*buf = pbuf_alloc(PBUF_RAW, length, PBUF_RAM);
-	else
-		/* workaround for https://savannah.nongnu.org/bugs/index.php?50040 */
-		*buf = NULL;
+	/* workaround for https://savannah.nongnu.org/bugs/index.php?50040 */
+	if (length > 32000) {
+		DEBUG("Huge frame received or underflow (framelength %u)\n", length);
+		goto end;
+	}
 
-	if (*buf == NULL)
-		DEBUG("failed to allocate buf of length %u, discarding", length);
-	else
-		enc_RBM(dev, (*buf)->payload, ENC_READLOCATION_ANY, length);
+	*buf = pbuf_alloc(PBUF_RAW, length, PBUF_RAM);
 
+	if (*buf == NULL) {
+		DEBUG("failed to allocate buf of length %u, discarding\n", length);
+		goto end;
+	}
+
+	enc_RBM(dev, (*buf)->payload, ENC_READLOCATION_ANY, length);
+
+end:
 	receive_end(dev, header);
 
 	return (*buf == NULL) ? 2 : 0;
