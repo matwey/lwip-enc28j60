@@ -18,6 +18,9 @@ void mchdrv_poll(struct netif *netif) {
 			LWIP_DEBUGF(NETIF_DEBUG, ("incoming: %d packages, first read into %x\n", epktcnt, (unsigned int)(buf)));
 			result = netif->input(buf, netif);
 			LWIP_DEBUGF(NETIF_DEBUG, ("received with result %d\n", result));
+			//Free memory if buffer were not accepted by netif->input
+			if (result!=ERR_OK)
+				pbuf_free(buf);
 		} else {
 			/* FIXME: error reporting */
 			LWIP_DEBUGF(NETIF_DEBUG, ("didn't receive.\n"));
